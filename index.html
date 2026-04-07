@@ -122,44 +122,64 @@
         Chart.register(ChartDataLabels);
         let ambitChart, tempChart;
 
+        function normalizeText(text) {
+            return text.toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9\s]/g, "");
+        }
+
         function parseGTAFData(text) {
             const activities = [];
-            // Millora del parser per text real de PDF
+            // Millora del separador de cursos per ser més flexible
             const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
             for (let i = 1; i < sections.length; i += 2) {
                 const curs = sections[i];
                 const content = sections[i + 1];
                 
-                // Separem per codis d'activitat (solen començar per 205...)
+                // Dividim per codis d'activitat que solen ser la capçalera de cada bloc (205...)
                 const rawActivities = content.split(/\n(?=205\d{7,12}[A-Z]?)/);
                 
                 rawActivities.forEach(rawAct => {
-                    // Cercar hores amb més precisió (Dur.: XX h.)
+                    // Cercar hores (Dur.: XX h.)
                     const hoursMatch = rawAct.match(/Dur\.:\s*(\d+)\s*h/i);
                     const hores = hoursMatch ? parseInt(hoursMatch[1]) : 0;
                     
                     if (hores === 0) return;
 
-                    const lines = rawAct.trim().split('\n').filter(l => l.trim().length > 3);
-                    let titol = "Activitat";
+                    // Extracció intel·ligent del títol
+                    const lines = rawAct.trim().split('\n').map(l => l.trim()).filter(l => l.length > 2);
+                    let titolExtret = "";
+                    
+                    // Agafem les primeres 5 línies significatives per analitzar el context temàtic
+                    // ja que el títol sovint està tallat en diverses línies
+                    const contextTematic = lines.slice(0, 6).join(" ");
                     
                     if (lines.length > 0) {
-                        // Si la primera línia és codi, busquem la següent que no sigui "Modalitat"
-                        let titleCandidate = /^\d+[A-Z]?$/.test(lines[0].trim()) ? lines[1] : lines[0];
-                        if (titleCandidate.includes('Modalitat')) titleCandidate = lines[2] || titleCandidate;
-                        titol = titleCandidate.split('Modalitat')[0].trim();
+                        // El títol real sol estar després del codi
+                        let titleCandidate = /^\d+[A-Z]?$/.test(lines[0]) ? lines[1] : lines[0];
+                        if (titleCandidate && titleCandidate.includes('Modalitat')) titleCandidate = lines[2] || titleCandidate;
+                        titolExtret = titleCandidate ? titleCandidate.split('Modalitat')[0].trim() : "Activitat";
                     }
 
+                    // CLASSIFICACIÓ PER ÀMBITS (Amb diccionari ampliat i normalitzat)
                     let ambit = "Altres";
-                    const t = titol.toLowerCase();
-                    if (t.includes('lectura') || t.includes('llengua') || t.includes('escric') || t.includes('lingüístics') || t.includes('oral')) ambit = "Llengua";
-                    else if (t.includes('digital') || t.includes('edc') || t.includes('robòtica') || t.includes('computacional')) ambit = "Digital";
-                    else if (t.includes('coeducació') || t.includes('afectivosexual') || t.includes('violència') || t.includes('genere')) ambit = "Coeducació";
-                    else if (t.includes('inclusió') || t.includes('diversitat') || t.includes('universal') || t.includes('suport')) ambit = "Inclusió";
-                    else if (t.includes('projecte') || t.includes('innovació')) ambit = "Metodologia";
+                    const context = normalizeText(contextTematic);
+                    
+                    if (context.includes('lectura') || context.includes('llengua') || context.includes('escric') || context.includes('linguistic') || context.includes('oral') || context.includes('comprensio')) {
+                        ambit = "Llengua";
+                    } else if (context.includes('digital') || context.includes('edc') || context.includes('robotica') || context.includes('computacional') || context.includes('eines') || context.includes('estrategia digital')) {
+                        ambit = "Digital";
+                    } else if (context.includes('coeducacio') || context.includes('afectivosexual') || context.includes('violencia') || context.includes('genere') || context.includes('igualtat')) {
+                        ambit = "Coeducació";
+                    } else if (context.includes('inclusio') || context.includes('diversitat') || context.includes('universal') || context.includes('suport') || context.includes('nee')) {
+                        ambit = "Inclusió";
+                    } else if (context.includes('projecte') || context.includes('innovacio') || context.includes('aprenentatge') || context.includes('metodologia')) {
+                        ambit = "Metodologia";
+                    }
 
-                    activities.push({ curs, titol, hores, ambit });
+                    activities.push({ curs, titol: titolExtret, hores, ambit });
                 });
             }
             return activities;
@@ -170,7 +190,7 @@
             if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
             if (activities.length === 0) {
-                alert("No s'han trobat dades. Verifica que el text tingui els camps 'Curs 20XX-XX' i 'Dur.: XX h'.");
+                alert("No s'han trobat dades. Verifica que el text contingui 'Curs 20XX-XX' i 'Dur.: XX h'.");
                 return;
             }
             renderReport(activities);
@@ -189,20 +209,21 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td class="px-4 py-3 border border-slate-200 font-bold">${item.curs}</td>
                                 <td class="px-4 py-3 border border-slate-200 uppercase text-[10px]">${item.titol}</td>
-                                <td class="px-4 py-3 border border-slate-200">${item.ambit}</td>
+                                <td class="px-4 py-3 border border-slate-200 font-medium">${item.ambit}</td>
                                 <td class="px-4 py-3 border border-slate-200 text-right font-mono">${item.hores}</td>`;
                 tbody.appendChild(tr);
                 ambitStats[item.ambit] = (ambitStats[item.ambit] || 0) + item.hores;
                 cursStats[item.curs] = (cursStats[item.curs] || 0) + item.hores;
             });
 
-            const mainAmbit = Object.keys(ambitStats).reduce((a, b) => ambitStats[a] > ambitStats[b] ? a : b);
+            const sortedAmbits = Object.keys(ambitStats).sort((a, b) => ambitStats[b] - ambitStats[a]);
+            const mainAmbit = sortedAmbits[0];
             const totalHours = Object.values(ambitStats).reduce((a, b) => a + b, 0);
 
             document.getElementById('conclusions-text').innerHTML = `
-                <p>S'han detectat <strong>${totalHours} hores</strong> totals de formació.</p>
-                <p>L'àmbit prioritari és <strong>${mainAmbit}</strong>.</p>
-                <p>Aquesta anàlisi serveix per reflexionar sobre si la formació feta respon a les necessitats actuals del centre.</p>
+                <p>S'ha realitzat l'anàlisi de <strong>${totalHours} hores</strong> totals de formació en els darrers cursos.</p>
+                <p>L'àmbit amb més càrrega horària és <strong>${mainAmbit}</strong>, que representa un factor clau en el bagatge del centre.</p>
+                <p>Aquesta informació permet identificar si les formacions realitzades fins ara estan alineades amb els nous reptes del Pla d'Educació Digital o els objectius de Coeducació i Llengua.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -212,7 +233,7 @@
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
 
-            const palette = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+            const palette = ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1'];
             const sortedCurs = Object.keys(cursStats).sort();
 
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
@@ -225,8 +246,8 @@
                     maintainAspectRatio: false,
                     animation: false,
                     plugins: {
-                        legend: { position: 'right' },
-                        datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (v, ctx) => {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => {
                             let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                             return (v * 100 / sum).toFixed(0) + "%";
                         }}
@@ -243,7 +264,8 @@
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
-                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#64748b' } }
+                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#64748b', font: { size: 10 } } },
+                    scales: { y: { beginAtZero: true, grid: { display: false } } }
                 }
             });
         }
@@ -254,7 +276,6 @@
         }
 
         function exportToWord() {
-            // Generem imatges Base64 i les posem en tags <img> estàndard
             const donutBase64 = ambitChart.toBase64Image();
             const barBase64 = tempChart.toBase64Image();
             
@@ -268,34 +289,24 @@
             reportContent.querySelectorAll('canvas').forEach(el => el.remove());
             reportContent.querySelectorAll('.export-image').forEach(el => el.style.display = 'block');
 
-            // XML I CSS ESPECÍFIC PER A WORD I DRIVE (Marges i Pàgina)
             const style = `
                 <style>
                     @page Section1 { size: 595.3pt 841.9pt; margin: 70.85pt 70.85pt 70.85pt 70.85pt; mso-header-margin: 35.4pt; mso-footer-margin: 35.4pt; mso-paper-source: 0; }
                     div.Section1 { page: Section1; }
-                    body { font-family: 'Arial', sans-serif; line-height: 1.5; }
-                    h1 { font-size: 24pt; font-weight: bold; border-bottom: 2pt solid black; padding-bottom: 5pt; }
-                    h2 { font-size: 16pt; font-weight: bold; margin-top: 20pt; border-bottom: 1pt solid #ccc; }
-                    table { border-collapse: collapse; width: 100%; margin: 15pt 0; }
-                    th, td { border: 1pt solid #666; padding: 6pt; font-size: 10pt; }
-                    th { background-color: #f2f2f2; font-weight: bold; }
-                    .text-technical { text-align: justify; margin-bottom: 10pt; }
-                    img { display: block; margin: 15pt auto; }
+                    body { font-family: 'Arial', sans-serif; line-height: 1.4; color: #333; }
+                    h1 { font-size: 20pt; font-weight: bold; border-bottom: 2pt solid black; padding-bottom: 5pt; text-transform: uppercase; }
+                    h2 { font-size: 13pt; font-weight: bold; margin-top: 15pt; border-bottom: 1pt solid #eee; padding-bottom: 3pt; text-transform: uppercase; color: #000; }
+                    table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+                    th, td { border: 0.5pt solid #ccc; padding: 5pt; font-size: 9pt; }
+                    th { background-color: #f9f9f9; font-weight: bold; text-align: left; }
+                    .text-technical { text-align: justify; margin-bottom: 8pt; font-size: 10pt; }
+                    img { display: block; margin: 10pt auto; }
                 </style>
             `;
 
             const header = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head>
-                    <!--[if gte mso 9]>
-                    <xml>
-                        <w:WordDocument>
-                            <w:View>Print</w:View>
-                            <w:Zoom>100</w:Zoom>
-                            <w:DoNotOptimizeForBrowser/>
-                        </w:WordDocument>
-                    </xml>
-                    <![endif]-->
                     <meta charset='utf-8'>
                     ${style}
                 </head>
@@ -311,7 +322,6 @@
             link.download = `Diagnosi_${centerName.replace(/\s+/g, '_')}.doc`;
             link.click();
             
-            // Netegem les imatges temporals
             document.getElementById('img-donut-container').innerHTML = '';
             document.getElementById('img-bar-container').innerHTML = '';
         }
