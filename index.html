@@ -35,12 +35,12 @@
             <h2 class="text-lg font-bold text-slate-800 mb-4 uppercase tracking-wide">
                 Configuració de l'Anàlisi Tècnica
             </h2>
-            <p class="text-sm text-slate-500 mb-4 italic">Enganxa aquí el text copiat directament del PDF o del GTAF:</p>
-            <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-xs mb-4" placeholder="Exemple: Curs 2025-2026... El procés d'aprenentatge... Dur.: 21 h."></textarea>
+            <p class="text-sm text-slate-500 mb-4 italic">Enganxa aquí el text copiat directament de l'Històric de Formacions:</p>
+            <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-xs mb-4" placeholder="Curs 2025-2026... Dur.: 21 h..."></textarea>
             
             <div class="flex gap-4">
-                <button onclick="processData()" class="bg-slate-900 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-slate-800 transition uppercase tracking-tighter">Processar Dades Reals</button>
-                <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition">Netejar</button>
+                <button onclick="processData()" class="bg-slate-900 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-slate-800 transition uppercase tracking-tighter shadow-sm">Processar Dades Reals</button>
+                <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition font-medium">Netejar</button>
             </div>
         </div>
     </div>
@@ -64,7 +64,7 @@
         <div class="mb-10">
             <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">0. Introducció</h2>
             <div class="text-technical text-slate-700">
-                <p>Aquest informe ha estat generat a partir de les dades subministrades pel centre. L'anàlisi automatitzada classifica les activitats per curs i àmbit temàtic d'acord amb la descripció de cada activitat certificada.</p>
+                <p>Aquest informe recull i analitza el bagatge formatiu del centre a partir de les dades extretes de l'històric de formacions. L'objectiu és oferir una visió clara de la distribució temàtica i l'esforç formatiu per cursos.</p>
             </div>
         </div>
 
@@ -86,23 +86,24 @@
         </div>
 
         <div class="grid grid-cols-1 gap-12 mb-10">
-            <div>
-                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">2. Distribució per Àmbits</h2>
-                <div class="chart-wrapper" id="wrapper-donut">
+            <div id="section-donut">
+                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">2. Distribució per Àmbits (%)</h2>
+                <div class="chart-wrapper">
                     <div class="chart-container-medium">
                         <canvas id="canvas-donut"></canvas>
                     </div>
-                    <img id="img-donut" class="export-image" alt="Gràfic àmbits">
+                    <!-- Contenidor per a imatges exportades -->
+                    <div id="img-donut-container" class="export-image"></div>
                 </div>
             </div>
             
-            <div>
-                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">3. Evolució de Dedicació</h2>
-                <div class="chart-wrapper" id="wrapper-bar">
+            <div id="section-bar">
+                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">3. Evolució de Dedicació (Hores)</h2>
+                <div class="chart-wrapper">
                     <div class="chart-container-medium" style="max-width: 450px;">
                         <canvas id="canvas-bar"></canvas>
                     </div>
-                    <img id="img-bar" class="export-image" alt="Gràfic evolució">
+                    <div id="img-bar-container" class="export-image"></div>
                 </div>
             </div>
         </div>
@@ -121,43 +122,42 @@
         Chart.register(ChartDataLabels);
         let ambitChart, tempChart;
 
-        // Funció d'extracció intel·ligent
         function parseGTAFData(text) {
             const activities = [];
-            const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/i);
+            // Millora del parser per text real de PDF
+            const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
-            // Comencem des d'1 perquè l'índex 0 és el que hi ha abans del primer "Curs"
             for (let i = 1; i < sections.length; i += 2) {
                 const curs = sections[i];
                 const content = sections[i + 1];
                 
-                // Dividim per possibles codis de curs (ex: 2050610555C) per separar activitats del mateix curs
-                const rawActivities = content.split(/\n(?=\d{8,12}[A-Z])/);
+                // Separem per codis d'activitat (solen començar per 205...)
+                const rawActivities = content.split(/\n(?=205\d{7,12}[A-Z]?)/);
                 
                 rawActivities.forEach(rawAct => {
-                    // 1. Cercar hores (Dur.: XX h)
+                    // Cercar hores amb més precisió (Dur.: XX h.)
                     const hoursMatch = rawAct.match(/Dur\.:\s*(\d+)\s*h/i);
                     const hores = hoursMatch ? parseInt(hoursMatch[1]) : 0;
                     
                     if (hores === 0) return;
 
-                    // 2. Cercar títol (normalment la primera o segona línia significativa després del codi)
-                    const lines = rawAct.trim().split('\n').filter(l => l.trim().length > 5);
-                    let titol = "Activitat no identificada";
+                    const lines = rawAct.trim().split('\n').filter(l => l.trim().length > 3);
+                    let titol = "Activitat";
                     
                     if (lines.length > 0) {
-                        // Si la primera línia és només un codi, agafem la segona
-                        titol = /^\d+[A-Z]?$/.test(lines[0].trim()) ? lines[1] : lines[0];
-                        titol = titol.split('Modalitat:')[0].trim(); // Netegem si s'ha colat la modalitat
+                        // Si la primera línia és codi, busquem la següent que no sigui "Modalitat"
+                        let titleCandidate = /^\d+[A-Z]?$/.test(lines[0].trim()) ? lines[1] : lines[0];
+                        if (titleCandidate.includes('Modalitat')) titleCandidate = lines[2] || titleCandidate;
+                        titol = titleCandidate.split('Modalitat')[0].trim();
                     }
 
-                    // 3. Classificar Àmbit per paraules clau
                     let ambit = "Altres";
                     const t = titol.toLowerCase();
-                    if (t.includes('lectura') || t.includes('llengua') || t.includes('escric') || t.includes('lingüístics')) ambit = "Llengua";
-                    else if (t.includes('digital') || t.includes('edc') || t.includes('robòtica')) ambit = "Digital";
-                    else if (t.includes('coeducació') || t.includes('afectivosexual') || t.includes('violència')) ambit = "Coeducació";
-                    else if (t.includes('inclusió') || t.includes('diversitat') || t.includes('universal')) ambit = "Inclusió";
+                    if (t.includes('lectura') || t.includes('llengua') || t.includes('escric') || t.includes('lingüístics') || t.includes('oral')) ambit = "Llengua";
+                    else if (t.includes('digital') || t.includes('edc') || t.includes('robòtica') || t.includes('computacional')) ambit = "Digital";
+                    else if (t.includes('coeducació') || t.includes('afectivosexual') || t.includes('violència') || t.includes('genere')) ambit = "Coeducació";
+                    else if (t.includes('inclusió') || t.includes('diversitat') || t.includes('universal') || t.includes('suport')) ambit = "Inclusió";
+                    else if (t.includes('projecte') || t.includes('innovació')) ambit = "Metodologia";
 
                     activities.push({ curs, titol, hores, ambit });
                 });
@@ -167,18 +167,12 @@
 
         function processData() {
             const rawText = document.getElementById('raw-data').value;
-            if (!rawText.trim()) {
-                alert("Si us plau, enganxa alguna dada per processar.");
-                return;
-            }
-
+            if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
-            
             if (activities.length === 0) {
-                alert("No s'han pogut identificar activitats. Revisa que el text contingui el format 'Curs 20XX-XX' i 'Dur.: XX h'.");
+                alert("No s'han trobat dades. Verifica que el text tingui els camps 'Curs 20XX-XX' i 'Dur.: XX h'.");
                 return;
             }
-
             renderReport(activities);
         }
 
@@ -202,14 +196,13 @@
                 cursStats[item.curs] = (cursStats[item.curs] || 0) + item.hores;
             });
 
-            // Conclusions automàtiques basades en dades reals
             const mainAmbit = Object.keys(ambitStats).reduce((a, b) => ambitStats[a] > ambitStats[b] ? a : b);
             const totalHours = Object.values(ambitStats).reduce((a, b) => a + b, 0);
 
             document.getElementById('conclusions-text').innerHTML = `
-                <p>S'han analitzat un total de <strong>${totalHours} hores</strong> de formació certificada.</p>
-                <p>L'àmbit amb més presència és <strong>${mainAmbit}</strong>, que concentra la major part dels esforços de formació del claustre.</p>
-                <p>Es recomana contrastar aquestes dades amb els objectius del Pla de Millora del centre per verificar l'alineació pedagògica.</p>
+                <p>S'han detectat <strong>${totalHours} hores</strong> totals de formació.</p>
+                <p>L'àmbit prioritari és <strong>${mainAmbit}</strong>.</p>
+                <p>Aquesta anàlisi serveix per reflexionar sobre si la formació feta respon a les necessitats actuals del centre.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -250,8 +243,7 @@
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
-                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#64748b' } },
-                    scales: { y: { beginAtZero: true } }
+                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#64748b' } }
                 }
             });
         }
@@ -262,36 +254,55 @@
         }
 
         function exportToWord() {
-            document.getElementById('img-donut').src = ambitChart.toBase64Image();
-            document.getElementById('img-bar').src = tempChart.toBase64Image();
+            // Generem imatges Base64 i les posem en tags <img> estàndard
+            const donutBase64 = ambitChart.toBase64Image();
+            const barBase64 = tempChart.toBase64Image();
+            
+            document.getElementById('img-donut-container').innerHTML = `<img src="${donutBase64}" width="500">`;
+            document.getElementById('img-bar-container').innerHTML = `<img src="${barBase64}" width="400">`;
 
             const centerName = document.getElementById('center-name').innerText;
             const reportContent = document.getElementById('report-container').cloneNode(true);
             
             reportContent.querySelectorAll('.no-print').forEach(el => el.remove());
             reportContent.querySelectorAll('canvas').forEach(el => el.remove());
-            
-            reportContent.querySelectorAll('.export-image').forEach(img => {
-                img.style.display = 'block';
-                img.style.margin = '20px auto';
-                if(img.id.includes('donut')) img.setAttribute('width', '500');
-                else img.setAttribute('width', '400');
-            });
+            reportContent.querySelectorAll('.export-image').forEach(el => el.style.display = 'block');
 
+            // XML I CSS ESPECÍFIC PER A WORD I DRIVE (Marges i Pàgina)
             const style = `
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-                    th, td { border: 1px solid #999; padding: 8px; font-size: 9pt; }
-                    th { background-color: #f3f4f6; }
-                    h1 { font-size: 22pt; color: #000; border-bottom: 3px solid #000; }
-                    h2 { font-size: 14pt; color: #333; border-bottom: 1px solid #ccc; margin-top: 25px; }
+                    @page Section1 { size: 595.3pt 841.9pt; margin: 70.85pt 70.85pt 70.85pt 70.85pt; mso-header-margin: 35.4pt; mso-footer-margin: 35.4pt; mso-paper-source: 0; }
+                    div.Section1 { page: Section1; }
+                    body { font-family: 'Arial', sans-serif; line-height: 1.5; }
+                    h1 { font-size: 24pt; font-weight: bold; border-bottom: 2pt solid black; padding-bottom: 5pt; }
+                    h2 { font-size: 16pt; font-weight: bold; margin-top: 20pt; border-bottom: 1pt solid #ccc; }
+                    table { border-collapse: collapse; width: 100%; margin: 15pt 0; }
+                    th, td { border: 1pt solid #666; padding: 6pt; font-size: 10pt; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .text-technical { text-align: justify; margin-bottom: 10pt; }
+                    img { display: block; margin: 15pt auto; }
                 </style>
             `;
 
-            const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                            <head><meta charset='utf-8'>${style}</head><body>`;
-            const footer = "</body></html>";
+            const header = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head>
+                    <!--[if gte mso 9]>
+                    <xml>
+                        <w:WordDocument>
+                            <w:View>Print</w:View>
+                            <w:Zoom>100</w:Zoom>
+                            <w:DoNotOptimizeForBrowser/>
+                        </w:WordDocument>
+                    </xml>
+                    <![endif]-->
+                    <meta charset='utf-8'>
+                    ${style}
+                </head>
+                <body>
+                    <div class="Section1">
+            `;
+            const footer = "</div></body></html>";
             
             const blob = new Blob(['\ufeff', header + reportContent.innerHTML + footer], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
@@ -299,6 +310,10 @@
             link.href = url;
             link.download = `Diagnosi_${centerName.replace(/\s+/g, '_')}.doc`;
             link.click();
+            
+            // Netegem les imatges temporals
+            document.getElementById('img-donut-container').innerHTML = '';
+            document.getElementById('img-bar-container').innerHTML = '';
         }
     </script>
 </body>
