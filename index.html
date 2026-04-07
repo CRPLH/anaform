@@ -6,6 +6,8 @@
     <title>Eina de Diagnosi de Formació CRP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin per mostrar labels de dades (percentatges) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -15,8 +17,8 @@
             .print-section { break-inside: avoid; margin-bottom: 3rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 2rem; }
             body { background-color: white; }
         }
-        .chart-wrapper { position: relative; height: 280px; width: 100%; margin: 1.5rem 0; display: flex; justify-content: center; }
-        .chart-container-small { width: 100%; max-width: 500px; height: 280px; }
+        .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; display: flex; justify-content: center; }
+        .chart-container-medium { width: 100%; max-width: 600px; height: 320px; }
         .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
         .export-image { display: none; height: auto; margin: 1rem auto; }
     </style>
@@ -92,11 +94,11 @@
                 </p>
             </div>
             <div class="chart-wrapper">
-                <div class="chart-container-small">
+                <div class="chart-container-medium">
                     <canvas id="canvas-donut"></canvas>
                 </div>
                 <div class="export-only-wrapper" style="display:none; text-align:center;">
-                    <img id="img-donut" class="export-image" style="width:380px;" alt="Gràfic d'àmbits">
+                    <img id="img-donut" class="export-image" style="width:480px;" alt="Gràfic d'àmbits">
                 </div>
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 1: Distribució percentual de la càrrega horària per eix temàtic.</p>
@@ -111,7 +113,7 @@
                 </p>
             </div>
             <div class="chart-wrapper">
-                <div class="chart-container-small">
+                <div class="chart-container-medium" style="max-width: 500px;">
                     <canvas id="canvas-bar"></canvas>
                 </div>
                 <div class="export-only-wrapper" style="display:none; text-align:center;">
@@ -137,10 +139,12 @@
     </div>
 
     <script>
+        // Registrem el plugin de labels per a tots els gràfics
+        Chart.register(ChartDataLabels);
+
         let ambitChart, tempChart;
 
         function processData() {
-            // Dades de prova (en una versió final es traurien del textarea)
             const activities = [
                 { curs: '2025-26', titol: 'El procés d’aprenentatge de la lectura, l’autonomia en la descodificació', hores: 21, ambit: 'Llengua', modalitat: 'Taller' },
                 { curs: '2024-25', titol: 'Eines per la coeducació i l’educació afectivosexual', hores: 15, ambit: 'Coeducació', modalitat: 'Taller' },
@@ -196,6 +200,9 @@
             Chart.defaults.font.size = 11;
             Chart.defaults.color = '#64748b';
 
+            // Nova paleta més contrastada i alegre
+            const palette = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
             const sortedCursKeys = Object.keys(cursStats).sort((a, b) => a.localeCompare(b));
             const sortedCursValues = sortedCursKeys.map(key => cursStats[key]);
 
@@ -205,8 +212,8 @@
                     labels: Object.keys(ambitStats),
                     datasets: [{
                         data: Object.values(ambitStats),
-                        backgroundColor: ['#0f172a', '#334155', '#64748b', '#94a3b8'],
-                        borderWidth: 1,
+                        backgroundColor: palette,
+                        borderWidth: 2,
                         borderColor: '#ffffff'
                     }]
                 },
@@ -219,9 +226,27 @@
                         }
                     },
                     plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { weight: '600' } } }
+                        legend: { 
+                            position: 'right', 
+                            labels: { 
+                                boxWidth: 15, 
+                                padding: 15, 
+                                font: { weight: '600', size: 12 } 
+                            } 
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value, ctx) => {
+                                let sum = 0;
+                                let dataArr = ctx.chart.data.datasets[0].data;
+                                dataArr.map(data => { sum += data; });
+                                let percentage = (value * 100 / sum).toFixed(0) + "%";
+                                return percentage;
+                            }
+                        }
                     },
-                    cutout: '70%'
+                    cutout: '50%'
                 }
             });
 
@@ -231,7 +256,7 @@
                     labels: sortedCursKeys,
                     datasets: [{
                         data: sortedCursValues,
-                        backgroundColor: '#0f172a',
+                        backgroundColor: '#1e293b',
                         borderRadius: 4,
                         barThickness: 30
                     }]
@@ -252,7 +277,15 @@
                         },
                         x: { grid: { display: false } }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#64748b',
+                            font: { weight: 'bold' }
+                        }
+                    }
                 }
             });
         }
@@ -265,7 +298,6 @@
         function exportToWord() {
             const content = document.getElementById('report-container').cloneNode(true);
             
-            // Neteja de canvas i activació d'imatges estàtiques per a Word
             const canvases = content.querySelectorAll('canvas');
             canvases.forEach(canvas => canvas.remove());
             
@@ -279,8 +311,7 @@
             const images = content.querySelectorAll('.export-image');
             images.forEach(img => {
                 img.style.display = 'inline-block';
-                // Ajustem l'amplada segons el gràfic per no desbordar
-                const targetWidth = img.id === 'img-donut' ? '320' : '380';
+                const targetWidth = img.id === 'img-donut' ? '450' : '380';
                 img.setAttribute('width', targetWidth);
             });
 
