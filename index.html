@@ -15,10 +15,10 @@
             .print-section { break-inside: avoid; margin-bottom: 3rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 2rem; }
             body { background-color: white; }
         }
-        .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; }
+        .chart-wrapper { position: relative; height: 280px; width: 100%; margin: 1.5rem 0; display: flex; justify-content: center; }
+        .chart-container-small { width: 100%; max-width: 500px; height: 280px; }
         .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
-        /* Estils per a la imatge de reemplaçament en exportació */
-        .export-image { display: none; width: 100%; max-width: 580px; height: auto; margin: 1rem auto; display: none; }
+        .export-image { display: none; height: auto; margin: 1rem auto; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -92,9 +92,11 @@
                 </p>
             </div>
             <div class="chart-wrapper">
-                <canvas id="canvas-donut"></canvas>
+                <div class="chart-container-small">
+                    <canvas id="canvas-donut"></canvas>
+                </div>
                 <div class="export-only-wrapper" style="display:none; text-align:center;">
-                    <img id="img-donut" class="export-image" style="width:450px;" alt="Gràfic d'àmbits">
+                    <img id="img-donut" class="export-image" style="width:380px;" alt="Gràfic d'àmbits">
                 </div>
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 1: Distribució percentual de la càrrega horària per eix temàtic.</p>
@@ -105,13 +107,15 @@
             <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">3. Evolució dedicació horària</h2>
             <div class="text-technical text-slate-700 mb-6">
                 <p>
-                    Es detalla a continuació la progressió cronològica de la dedicació horària del centre. Aquesta mètrica permet valorar el volum d'activitat formativa per curs acadèmic, reflectint l'impacte de projectes d'innovació o plans de formació de centre (FIC).
+                    Es detalla a continuació la progressió cronològica de la dedicació horària del centre. Aquesta mètrica permet valorar el volum d'activitat formativa per curs acadèmic.
                 </p>
             </div>
             <div class="chart-wrapper">
-                <canvas id="canvas-bar"></canvas>
+                <div class="chart-container-small">
+                    <canvas id="canvas-bar"></canvas>
+                </div>
                 <div class="export-only-wrapper" style="display:none; text-align:center;">
-                    <img id="img-bar" class="export-image" style="width:550px;" alt="Gràfic d'evolució">
+                    <img id="img-bar" class="export-image" style="width:400px;" alt="Gràfic d'evolució">
                 </div>
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 2: Històric de hores certificades per curs acadèmic (ordre cronològic).</p>
@@ -136,6 +140,7 @@
         let ambitChart, tempChart;
 
         function processData() {
+            // Dades de prova (en una versió final es traurien del textarea)
             const activities = [
                 { curs: '2025-26', titol: 'El procés d’aprenentatge de la lectura, l’autonomia en la descodificació', hores: 21, ambit: 'Llengua', modalitat: 'Taller' },
                 { curs: '2024-25', titol: 'Eines per la coeducació i l’educació afectivosexual', hores: 15, ambit: 'Coeducació', modalitat: 'Taller' },
@@ -175,8 +180,8 @@
             const concContainer = document.getElementById('conclusions-text');
             concContainer.innerHTML = `
                 <p><strong>1. Àmbit dominant:</strong> L'eix de <strong>${principalAmbit}</strong> representa el volum principal d'hores certificades (${ambitStats[principalAmbit]} hores), indicant una especialització temàtica sostinguda en el temps.</p>
-                <p><strong>2. Distribució de modalitats:</strong> Es registra una alta prevalença de formació en format taller a centre i plans de formació interna (FIC), el que suggereix una modalitat de treball orientada a la pràctica de reflexió en grup.</p>
-                <p><strong>3. Continuïtat temporal:</strong> L'activitat formativa presenta una continuïtat en els darrers quatre cursos acadèmics, amb un pic d'activitat el curs 2022-23 coincidint amb la implementació de l'EDC (Estratègia Digital de Centre).</p>
+                <p><strong>2. Distribució de modalitats:</strong> Es registra una alta prevalença de formació en format taller a centre i plans de formació interna (FIC).</p>
+                <p><strong>3. Continuïtat temporal:</strong> L'activitat formativa presenta una continuïtat en els darrers quatre cursos acadèmics.</p>
             `;
 
             updateCharts(ambitStats, cursStats);
@@ -207,16 +212,16 @@
                 },
                 options: { 
                     maintainAspectRatio: false,
-                    devicePixelRatio: 2, // Millora la resolució de la imatge base64
+                    devicePixelRatio: 2,
                     animation: {
                         onComplete: function() {
                             document.getElementById('img-donut').src = ambitChart.toBase64Image();
                         }
                     },
                     plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { weight: '600' } } }
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { weight: '600' } } }
                     },
-                    cutout: '75%'
+                    cutout: '70%'
                 }
             });
 
@@ -227,7 +232,8 @@
                     datasets: [{
                         data: sortedCursValues,
                         backgroundColor: '#0f172a',
-                        borderRadius: 2
+                        borderRadius: 4,
+                        barThickness: 30
                     }]
                 },
                 options: { 
@@ -259,29 +265,28 @@
         function exportToWord() {
             const content = document.getElementById('report-container').cloneNode(true);
             
-            // Eliminem els elements que no volem al Word
+            // Neteja de canvas i activació d'imatges estàtiques per a Word
             const canvases = content.querySelectorAll('canvas');
             canvases.forEach(canvas => canvas.remove());
             
-            // Mostrem els contenidors d'imatge i ajustem per a Word
             const exportWrappers = content.querySelectorAll('.export-only-wrapper');
             exportWrappers.forEach(wrapper => {
                 wrapper.style.display = 'block';
-                wrapper.style.marginBottom = '20px';
-                wrapper.style.marginTop = '20px';
+                wrapper.style.textAlign = 'center';
+                wrapper.style.margin = '20px 0';
             });
 
             const images = content.querySelectorAll('.export-image');
             images.forEach(img => {
                 img.style.display = 'inline-block';
-                // Forçarem una amplada màxima en punts per a Word (aprox 450pt)
-                img.setAttribute('width', img.id === 'img-donut' ? '400' : '550');
+                // Ajustem l'amplada segons el gràfic per no desbordar
+                const targetWidth = img.id === 'img-donut' ? '320' : '380';
+                img.setAttribute('width', targetWidth);
             });
 
             const actions = content.querySelector('.no-print');
             if (actions) actions.remove();
 
-            // Preparem l'envoltori HTML compatible amb Word i A4
             const header = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset='utf-8'><title>Informe de Diagnosi</title>
@@ -295,19 +300,15 @@
                 </xml>
                 <![endif]-->
                 <style>
-                    @page {
-                        size: 21cm 29.7cm;
-                        margin: 2.5cm 2cm 2.5cm 2cm;
-                    }
-                    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; }
-                    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                    @page { size: 21cm 29.7cm; margin: 2.5cm 2cm; }
+                    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #334155; }
+                    table { border-collapse: collapse; width: 100%; margin: 15px 0; }
                     th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 9pt; }
-                    th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; color: #334155; }
-                    .text-technical { text-align: justify; line-height: 1.5; }
-                    h1 { color: #0f172a; font-size: 18pt; margin-bottom: 5pt; }
-                    h2 { color: #0f172a; font-size: 11pt; border-bottom: 1px solid #0f172a; margin-top: 25pt; padding-bottom: 3pt; text-transform: uppercase; letter-spacing: 1px; }
-                    .chart-wrapper { text-align: center; width: 100%; }
-                    p { margin-bottom: 10pt; }
+                    th { background-color: #f8fafc; font-weight: bold; text-transform: uppercase; }
+                    h1 { color: #0f172a; font-size: 18pt; border-bottom: 2pt solid #0f172a; padding-bottom: 5pt; }
+                    h2 { color: #0f172a; font-size: 11pt; border-bottom: 1px solid #e2e8f0; margin-top: 20pt; padding-bottom: 3pt; text-transform: uppercase; }
+                    .chart-wrapper { text-align: center; margin: 20px auto; }
+                    p { margin-bottom: 10pt; line-height: 1.5; }
                 </style>
                 </head><body>`;
             const footer = "</body></html>";
@@ -318,7 +319,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'Diagnosi_Formacio_Centre.doc';
+            link.download = 'Diagnosi_Formacio_Centre_CRP.doc';
             link.click();
         }
     </script>
