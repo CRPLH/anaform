@@ -131,39 +131,29 @@
 
         function parseGTAFData(text) {
             const activities = [];
-            // Millora del separador de cursos per ser més flexible
             const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
             for (let i = 1; i < sections.length; i += 2) {
                 const curs = sections[i];
                 const content = sections[i + 1];
-                
-                // Dividim per codis d'activitat que solen ser la capçalera de cada bloc (205...)
                 const rawActivities = content.split(/\n(?=205\d{7,12}[A-Z]?)/);
                 
                 rawActivities.forEach(rawAct => {
-                    // Cercar hores (Dur.: XX h.)
                     const hoursMatch = rawAct.match(/Dur\.:\s*(\d+)\s*h/i);
                     const hores = hoursMatch ? parseInt(hoursMatch[1]) : 0;
                     
                     if (hores === 0) return;
 
-                    // Extracció intel·ligent del títol
                     const lines = rawAct.trim().split('\n').map(l => l.trim()).filter(l => l.length > 2);
                     let titolExtret = "";
-                    
-                    // Agafem les primeres 5 línies significatives per analitzar el context temàtic
-                    // ja que el títol sovint està tallat en diverses línies
                     const contextTematic = lines.slice(0, 6).join(" ");
                     
                     if (lines.length > 0) {
-                        // El títol real sol estar després del codi
                         let titleCandidate = /^\d+[A-Z]?$/.test(lines[0]) ? lines[1] : lines[0];
                         if (titleCandidate && titleCandidate.includes('Modalitat')) titleCandidate = lines[2] || titleCandidate;
                         titolExtret = titleCandidate ? titleCandidate.split('Modalitat')[0].trim() : "Activitat";
                     }
 
-                    // CLASSIFICACIÓ PER ÀMBITS (Amb diccionari ampliat i normalitzat)
                     let ambit = "Altres";
                     const context = normalizeText(contextTematic);
                     
@@ -190,7 +180,7 @@
             if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
             if (activities.length === 0) {
-                alert("No s'han trobat dades. Verifica que el text contingui 'Curs 20XX-XX' i 'Dur.: XX h'.");
+                alert("No s'han trobat dades. Verifica el format.");
                 return;
             }
             renderReport(activities);
@@ -221,9 +211,8 @@
             const totalHours = Object.values(ambitStats).reduce((a, b) => a + b, 0);
 
             document.getElementById('conclusions-text').innerHTML = `
-                <p>S'ha realitzat l'anàlisi de <strong>${totalHours} hores</strong> totals de formació en els darrers cursos.</p>
-                <p>L'àmbit amb més càrrega horària és <strong>${mainAmbit}</strong>, que representa un factor clau en el bagatge del centre.</p>
-                <p>Aquesta informació permet identificar si les formacions realitzades fins ara estan alineades amb els nous reptes del Pla d'Educació Digital o els objectius de Coeducació i Llengua.</p>
+                <p>S'ha realitzat l'anàlisi de <strong>${totalHours} hores</strong> totals de formació.</p>
+                <p>L'àmbit prioritari és <strong>${mainAmbit}</strong>.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -233,21 +222,36 @@
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
 
-            const palette = ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1'];
-            const sortedCurs = Object.keys(cursStats).sort();
+            // Restauració de la paleta de colors vius original
+            const colorPalette = {
+                'Llengua': '#2563eb',       // Blau
+                'Digital': '#10b981',       // Verd
+                'Coeducació': '#f59e0b',    // Ambre
+                'Inclusió': '#ef4444',      // Vermell
+                'Metodologia': '#8b5cf6',   // Lila
+                'Altres': '#94a3b8'         // Gris
+            };
+
+            const labels = Object.keys(ambitStats);
+            const colors = labels.map(label => colorPalette[label] || '#94a3b8');
 
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(ambitStats),
-                    datasets: [{ data: Object.values(ambitStats), backgroundColor: palette }]
+                    labels: labels,
+                    datasets: [{ 
+                        data: Object.values(ambitStats), 
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
                 },
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
                     plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
-                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
+                        datalabels: { color: '#fff', font: { weight: 'bold', size: 11 }, formatter: (v, ctx) => {
                             let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                             return (v * 100 / sum).toFixed(0) + "%";
                         }}
@@ -255,16 +259,20 @@
                 }
             });
 
+            const sortedCurs = Object.keys(cursStats).sort();
             tempChart = new Chart(document.getElementById('canvas-bar'), {
                 type: 'bar',
                 data: {
                     labels: sortedCurs,
-                    datasets: [{ data: sortedCurs.map(c => cursStats[c]), backgroundColor: '#0f172a' }]
+                    datasets: [{ data: sortedCurs.map(c => cursStats[c]), backgroundColor: '#1e293b' }]
                 },
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
-                    plugins: { legend: { display: false }, datalabels: { anchor: 'end', align: 'top', color: '#64748b', font: { size: 10 } } },
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { size: 10, weight: 'bold' } } 
+                    },
                     scales: { y: { beginAtZero: true, grid: { display: false } } }
                 }
             });
@@ -306,12 +314,8 @@
 
             const header = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head>
-                    <meta charset='utf-8'>
-                    ${style}
-                </head>
-                <body>
-                    <div class="Section1">
+                <head><meta charset='utf-8'>${style}</head>
+                <body><div class="Section1">
             `;
             const footer = "</div></body></html>";
             
