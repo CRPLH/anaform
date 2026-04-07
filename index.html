@@ -18,7 +18,7 @@
         .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; }
         .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
         /* Estils per a la imatge de reemplaçament en exportació */
-        .export-image { display: none; width: 100%; max-width: 600px; height: auto; margin: 1rem auto; }
+        .export-image { display: none; width: 100%; max-width: 580px; height: auto; margin: 1rem auto; display: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -93,7 +93,9 @@
             </div>
             <div class="chart-wrapper">
                 <canvas id="canvas-donut"></canvas>
-                <img id="img-donut" class="export-image" alt="Gràfic d'àmbits">
+                <div class="export-only-wrapper" style="display:none; text-align:center;">
+                    <img id="img-donut" class="export-image" style="width:450px;" alt="Gràfic d'àmbits">
+                </div>
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 1: Distribució percentual de la càrrega horària per eix temàtic.</p>
         </div>
@@ -108,7 +110,9 @@
             </div>
             <div class="chart-wrapper">
                 <canvas id="canvas-bar"></canvas>
-                <img id="img-bar" class="export-image" alt="Gràfic d'evolució">
+                <div class="export-only-wrapper" style="display:none; text-align:center;">
+                    <img id="img-bar" class="export-image" style="width:550px;" alt="Gràfic d'evolució">
+                </div>
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 2: Històric de hores certificades per curs acadèmic (ordre cronològic).</p>
         </div>
@@ -203,9 +207,9 @@
                 },
                 options: { 
                     maintainAspectRatio: false,
+                    devicePixelRatio: 2, // Millora la resolució de la imatge base64
                     animation: {
                         onComplete: function() {
-                            // Guardem la imatge per a l'exportació
                             document.getElementById('img-donut').src = ambitChart.toBase64Image();
                         }
                     },
@@ -228,9 +232,9 @@
                 },
                 options: { 
                     maintainAspectRatio: false,
+                    devicePixelRatio: 2,
                     animation: {
                         onComplete: function() {
-                            // Guardem la imatge per a l'exportació
                             document.getElementById('img-bar').src = tempChart.toBase64Image();
                         }
                     },
@@ -253,34 +257,57 @@
         }
 
         function exportToWord() {
-            // Clonem el contingut per modificar-lo per a Word sense afectar la vista
             const content = document.getElementById('report-container').cloneNode(true);
             
-            // Reemplaçem els Canvas per les seves versions en imatge Base64 (que Word sí entén)
+            // Eliminem els elements que no volem al Word
             const canvases = content.querySelectorAll('canvas');
             canvases.forEach(canvas => canvas.remove());
             
-            const images = content.querySelectorAll('.export-image');
-            images.forEach(img => {
-                img.style.display = 'block';
+            // Mostrem els contenidors d'imatge i ajustem per a Word
+            const exportWrappers = content.querySelectorAll('.export-only-wrapper');
+            exportWrappers.forEach(wrapper => {
+                wrapper.style.display = 'block';
+                wrapper.style.marginBottom = '20px';
+                wrapper.style.marginTop = '20px';
             });
 
-            // Treiem els botons d'acció
+            const images = content.querySelectorAll('.export-image');
+            images.forEach(img => {
+                img.style.display = 'inline-block';
+                // Forçarem una amplada màxima en punts per a Word (aprox 450pt)
+                img.setAttribute('width', img.id === 'img-donut' ? '400' : '550');
+            });
+
             const actions = content.querySelector('.no-print');
             if (actions) actions.remove();
 
-            // Preparem l'envoltori HTML compatible amb Word
+            // Preparem l'envoltori HTML compatible amb Word i A4
             const header = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset='utf-8'><title>Informe de Diagnosi</title>
+                <!--[if gte mso 9]>
+                <xml>
+                    <w:WordDocument>
+                        <w:View>Print</w:View>
+                        <w:Zoom>100</w:Zoom>
+                        <w:DoNotOptimizeForBrowser/>
+                    </w:WordDocument>
+                </xml>
+                <![endif]-->
                 <style>
-                    body { font-family: 'Segoe UI', Arial, sans-serif; }
-                    table { border-collapse: collapse; width: 100%; }
-                    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
-                    th { background-color: #f8fafc; font-weight: bold; text-transform: uppercase; font-size: 10px; }
-                    .text-technical { text-align: justify; }
-                    h1 { color: #0f172a; font-size: 20pt; }
-                    h2 { color: #0f172a; font-size: 12pt; border-bottom: 1px solid #000; margin-top: 20pt; }
+                    @page {
+                        size: 21cm 29.7cm;
+                        margin: 2.5cm 2cm 2.5cm 2cm;
+                    }
+                    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; }
+                    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                    th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 9pt; }
+                    th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; color: #334155; }
+                    .text-technical { text-align: justify; line-height: 1.5; }
+                    h1 { color: #0f172a; font-size: 18pt; margin-bottom: 5pt; }
+                    h2 { color: #0f172a; font-size: 11pt; border-bottom: 1px solid #0f172a; margin-top: 25pt; padding-bottom: 3pt; text-transform: uppercase; letter-spacing: 1px; }
+                    .chart-wrapper { text-align: center; width: 100%; }
+                    p { margin-bottom: 10pt; }
                 </style>
                 </head><body>`;
             const footer = "</body></html>";
@@ -291,7 +318,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'Diagnosi_Formacio_Tecnica.doc';
+            link.download = 'Diagnosi_Formacio_Centre.doc';
             link.click();
         }
     </script>
