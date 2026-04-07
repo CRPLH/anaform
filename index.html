@@ -17,6 +17,8 @@
         }
         .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; }
         .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
+        /* Estils per a la imatge de reemplaçament en exportació */
+        .export-image { display: none; width: 100%; max-width: 600px; height: auto; margin: 1rem auto; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -91,6 +93,7 @@
             </div>
             <div class="chart-wrapper">
                 <canvas id="canvas-donut"></canvas>
+                <img id="img-donut" class="export-image" alt="Gràfic d'àmbits">
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 1: Distribució percentual de la càrrega horària per eix temàtic.</p>
         </div>
@@ -105,6 +108,7 @@
             </div>
             <div class="chart-wrapper">
                 <canvas id="canvas-bar"></canvas>
+                <img id="img-bar" class="export-image" alt="Gràfic d'evolució">
             </div>
             <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 2: Històric de hores certificades per curs acadèmic (ordre cronològic).</p>
         </div>
@@ -128,7 +132,6 @@
         let ambitChart, tempChart;
 
         function processData() {
-            // Dades basades en el fitxer Històric formacions.pdf proporcionat
             const activities = [
                 { curs: '2025-26', titol: 'El procés d’aprenentatge de la lectura, l’autonomia en la descodificació', hores: 21, ambit: 'Llengua', modalitat: 'Taller' },
                 { curs: '2024-25', titol: 'Eines per la coeducació i l’educació afectivosexual', hores: 15, ambit: 'Coeducació', modalitat: 'Taller' },
@@ -164,7 +167,6 @@
                 cursStats[item.curs] = (cursStats[item.curs] || 0) + item.hores;
             });
 
-            // Conclusions Tècniques Objectives
             const principalAmbit = Object.keys(ambitStats).reduce((a, b) => ambitStats[a] > ambitStats[b] ? a : b);
             const concContainer = document.getElementById('conclusions-text');
             concContainer.innerHTML = `
@@ -185,7 +187,6 @@
             Chart.defaults.font.size = 11;
             Chart.defaults.color = '#64748b';
 
-            // Ordenació cronològica de les claus de curs (de més antic a més nou)
             const sortedCursKeys = Object.keys(cursStats).sort((a, b) => a.localeCompare(b));
             const sortedCursValues = sortedCursKeys.map(key => cursStats[key]);
 
@@ -202,6 +203,12 @@
                 },
                 options: { 
                     maintainAspectRatio: false,
+                    animation: {
+                        onComplete: function() {
+                            // Guardem la imatge per a l'exportació
+                            document.getElementById('img-donut').src = ambitChart.toBase64Image();
+                        }
+                    },
                     plugins: {
                         legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { weight: '600' } } }
                     },
@@ -221,6 +228,12 @@
                 },
                 options: { 
                     maintainAspectRatio: false,
+                    animation: {
+                        onComplete: function() {
+                            // Guardem la imatge per a l'exportació
+                            document.getElementById('img-bar').src = tempChart.toBase64Image();
+                        }
+                    },
                     scales: {
                         y: { 
                             beginAtZero: true, 
@@ -240,8 +253,41 @@
         }
 
         function exportToWord() {
-            const html = document.getElementById('report-container').innerHTML;
-            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            // Clonem el contingut per modificar-lo per a Word sense afectar la vista
+            const content = document.getElementById('report-container').cloneNode(true);
+            
+            // Reemplaçem els Canvas per les seves versions en imatge Base64 (que Word sí entén)
+            const canvases = content.querySelectorAll('canvas');
+            canvases.forEach(canvas => canvas.remove());
+            
+            const images = content.querySelectorAll('.export-image');
+            images.forEach(img => {
+                img.style.display = 'block';
+            });
+
+            // Treiem els botons d'acció
+            const actions = content.querySelector('.no-print');
+            if (actions) actions.remove();
+
+            // Preparem l'envoltori HTML compatible amb Word
+            const header = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Informe de Diagnosi</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+                    th { background-color: #f8fafc; font-weight: bold; text-transform: uppercase; font-size: 10px; }
+                    .text-technical { text-align: justify; }
+                    h1 { color: #0f172a; font-size: 20pt; }
+                    h2 { color: #0f172a; font-size: 12pt; border-bottom: 1px solid #000; margin-top: 20pt; }
+                </style>
+                </head><body>`;
+            const footer = "</body></html>";
+            
+            const fullHtml = header + content.innerHTML + footer;
+
+            const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
