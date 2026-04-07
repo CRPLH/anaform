@@ -7,132 +7,120 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         @media print {
             .no-print { display: none !important; }
             .print-container { width: 100%; max-width: 100%; margin: 0; padding: 0; border: none !important; box-shadow: none !important; }
-            .print-section { break-inside: avoid; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 2rem; }
+            .print-section { break-inside: avoid; margin-bottom: 3rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 2rem; }
             body { background-color: white; }
         }
-        .chart-wrapper { position: relative; height: 350px; width: 100%; margin: 2rem 0; }
-        .text-justified { text-align: justify; }
+        .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; }
+        .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 pb-20">
+<body class="bg-slate-50 text-slate-900 pb-20">
 
-    <!-- Zona de Configuració (Entrada de dades GTAF) -->
-    <div class="max-w-4xl mx-auto py-8 px-6 no-print">
-        <div class="bg-white p-6 rounded-xl shadow-md border border-indigo-100 mb-8">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4 flex items-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                Panell de Tècnic CRP: Entrada de Dades
+    <!-- Panell de Configuració Tècnica -->
+    <div class="max-w-5xl mx-auto py-8 px-6 no-print">
+        <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 mb-8">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 uppercase tracking-wide">
+                Configuració de l'Anàlisi Tècnica
             </h2>
-            <p class="text-sm text-slate-600 mb-4 font-semibold text-indigo-600">Enganxa el buidatge de GTAF.</p>
-            <textarea id="raw-data" rows="6" class="w-full p-4 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm mb-4" placeholder="Exemple: Curs 2025-26... 2050610555C... Dur.: 21 h."></textarea>
+            <p class="text-sm text-slate-500 mb-4 italic">Enganxa el buidatge de dades del sistema GTAF o de la memòria de centre per processar la diagnosi.</p>
+            <textarea id="raw-data" rows="6" class="w-full p-4 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-xs mb-4" placeholder="Exemple: Curs 2025-2026... 2050610555C... Dur.: 21 h."></textarea>
             
             <div class="flex gap-4">
-                <button onclick="processData()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg">Generar Informe Narratiu</button>
-                <button onclick="clearData()" class="text-slate-500 px-4 py-2 hover:text-red-600 transition">Netejar</button>
+                <button onclick="processData()" class="bg-slate-900 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-slate-800 transition uppercase tracking-tighter">Processar Dades</button>
+                <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition">Netejar entrada</button>
             </div>
         </div>
     </div>
 
-    <!-- Informe Generat (Narratiu i Intercalat) -->
-    <div id="report-container" class="max-w-4xl mx-auto py-12 px-12 bg-white shadow-xl rounded-xl hidden print-container">
-        <!-- Capçalera -->
-        <header class="pb-10 border-b-2 border-indigo-900 flex justify-between items-start mb-10">
+    <!-- Informe Tècnic de Diagnosi -->
+    <div id="report-container" class="max-w-5xl mx-auto py-12 px-16 bg-white shadow-sm border border-slate-200 hidden print-container">
+        <!-- Capçalera Institucional -->
+        <header class="pb-10 border-b-2 border-slate-900 flex justify-between items-start mb-10">
             <div>
-                <h1 class="text-3xl font-bold text-indigo-900 leading-tight uppercase tracking-tight">Informe de Diagnosi Tècnica</h1>
-                <p class="text-indigo-600 mt-1 font-bold tracking-widest text-sm italic">Servei Educatiu / CRP - Formació Permanent</p>
+                <h1 class="text-2xl font-bold text-slate-900 leading-none uppercase tracking-tighter">Informe de Diagnosi de Formació</h1>
+                <p class="text-slate-500 mt-2 font-medium text-sm">Centre de Recursos Pedagògics - Analista Tècnic de Formació</p>
             </div>
-            <div class="text-right">
-                <p class="text-xs text-slate-400 font-bold uppercase mb-1">Data de l'anàlisi</p>
-                <span id="current-date" class="font-mono text-lg font-bold text-slate-700">--/--/----</span>
+            <div class="text-right border-l border-slate-200 pl-6">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Data d'emissió</p>
+                <span id="current-date" class="font-mono text-sm font-bold text-slate-700">--/--/----</span>
             </div>
         </header>
 
-        <!-- Introducció -->
-        <div class="print-section mb-12">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4">0. Introducció i Context</h2>
-            <div class="text-justified text-slate-700 leading-relaxed space-y-4">
+        <!-- Secció 0: Context -->
+        <div class="print-section mb-10">
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">0. Introducció i Context Operatiu</h2>
+            <div class="text-technical text-slate-700 space-y-4">
                 <p>
-                    Aquest document presenta l'anàlisi tècnica del recorregut formatiu del centre a partir de l'extracció de dades del sistema <strong>GTAF</strong>. L'objectiu és identificar les línies mestres que han guiat la formació del claustre en els darrers anys i proporcionar una base objectiva per a la planificació del proper curs.
-                </p>
-                <p>
-                    A continuació, es detalla la relació cronològica de les activitats dutes a terme, així com una anàlisi qualitativa i quantitativa dels àmbits d'especialització i la seva evolució en el temps.
+                    Aquest informe sintetitza el bagatge formatiu del centre mitjançant el processament de les dades obtingudes de l'aplicatiu <strong>GTAF</strong>. L'anàlisi s'estructura per oferir una radiografia objectiva de la inversió en temps i especialització temàtica del claustre, classificant les activitats segons els eixos de formació permanent vigents.
                 </p>
             </div>
         </div>
 
-        <!-- Secció I: Taula Narrada -->
-        <div class="print-section mb-12">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4">1. Relació d'Activitats Detectades</h2>
-            <p class="text-slate-700 mb-6 text-justified leading-relaxed">
-                S'han identificat les següents accions formatives. Cal destacar la presència recurrent de tallers a centre, modalitat que facilita la transferència directa a l'aula i el treball col·laboratiu entre els docents.
-            </p>
-            <div class="overflow-x-auto mb-6">
-                <table class="w-full text-left text-sm border-collapse">
+        <!-- Secció 1: Resum Executiu -->
+        <div class="print-section mb-10">
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">1. Resum Executiu d'Activitats Formatives</h2>
+            <div class="overflow-x-auto mt-4">
+                <table class="w-full text-left text-xs border-collapse border border-slate-200">
                     <thead>
-                        <tr class="bg-indigo-900 text-white uppercase text-xs tracking-wider">
-                            <th class="px-5 py-4 font-bold">Curs acadèmic</th>
-                            <th class="px-5 py-4 font-bold">Denominació de l'Activitat</th>
-                            <th class="px-5 py-4 font-bold text-right">Càrrega (h)</th>
+                        <tr class="bg-slate-50 text-slate-700 uppercase tracking-tighter">
+                            <th class="px-4 py-3 border border-slate-200 font-bold">Curs</th>
+                            <th class="px-4 py-3 border border-slate-200 font-bold">Títol de la Formació</th>
+                            <th class="px-4 py-3 border border-slate-200 font-bold">Àmbit</th>
+                            <th class="px-4 py-3 border border-slate-200 font-bold text-right">Hores</th>
                         </tr>
                     </thead>
-                    <tbody id="data-table-body" class="divide-y divide-slate-200 border-b border-slate-200">
-                        <!-- Dades via JS -->
+                    <tbody id="data-table-body" class="text-slate-600">
+                        <!-- Generat dinàmicament -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Secció II: Àmbits Intercalat -->
-        <div class="print-section mb-12">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4">2. Anàlisi per Àmbit Temàtic</h2>
-            <div class="text-justified text-slate-700 leading-relaxed space-y-4 mb-6">
+        <!-- Secció 2: Anàlisi per Àmbits -->
+        <div class="print-section mb-10">
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">2. Anàlisi per Àmbits Temàtics</h2>
+            <div class="text-technical text-slate-700 mb-6">
                 <p>
-                    Un dels indicadors més rellevants de la diagnosi és la distribució de la formació segons la seva naturalesa temàtica. Aquesta distribució ens indica quins han estat els eixos prioritaris de millora en el centre.
-                </p>
-                <p id="analysis-ambits">
-                    Com s'observa en el gràfic següent, s'identifiquen tres grans focus d'interès: l'àmbit lingüístic, el benestar emocional/coeducació i la competència digital docent.
+                    La distribució de la formació segons eixos temàtics permet identificar la priorització dels recursos. La classificació s'ha realitzat d'acord amb la naturalesa de l'activitat i els objectius de certificació.
                 </p>
             </div>
-            <div class="chart-wrapper bg-slate-50 rounded-xl border border-slate-100 p-6">
+            <div class="chart-wrapper">
                 <canvas id="canvas-donut"></canvas>
             </div>
-            <p class="text-xs text-slate-500 italic text-center mt-2">Figura 1: Pes relatiu de cada àmbit temàtic sobre el total d'hores certificades.</p>
+            <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 1: Distribució percentual de la càrrega horària per eix temàtic.</p>
         </div>
 
-        <!-- Secció III: Evolució Intercalat -->
-        <div class="print-section mb-12">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4">3. Evolució de la Inversió Formativa</h2>
-            <div class="text-justified text-slate-700 leading-relaxed space-y-4 mb-6">
+        <!-- Secció 3: Evolució Temporal i Modalitats -->
+        <div class="print-section mb-10">
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">3. Evolució de la Inversió Formativa</h2>
+            <div class="text-technical text-slate-700 mb-6">
                 <p>
-                    L'evolució temporal del volum horari permet detectar els moments d'especial dinamisme formatiu. Sovint, aquests increments responen a la necessitat d'actualització per nous marcs normatius o projectes d'innovació de llarg recorregut.
-                </p>
-                <p id="analysis-temporal">
-                    L'anàlisi de la tendència mostra la següent corba d'activitat en hores per curs:
+                    Es detalla a continuació la progressió cronològica de la dedicació horària del centre. Aquesta mètrica permet valorar el volum d'activitat formativa per curs acadèmic, reflectint l'impacte de projectes d'innovació o plans de formació de centre (FIC).
                 </p>
             </div>
-            <div class="chart-wrapper bg-slate-50 rounded-xl border border-slate-100 p-6">
+            <div class="chart-wrapper">
                 <canvas id="canvas-bar"></canvas>
             </div>
-            <p class="text-xs text-slate-500 italic text-center mt-2">Figura 2: Evolució cronològica de la dedicació horària total.</p>
+            <p class="text-[10px] text-slate-400 italic text-center mt-2">Figura 2: Històric de hores certificades per curs acadèmic.</p>
         </div>
 
-        <!-- Conclusions -->
-        <div class="print-section mb-12">
-            <h2 class="text-xl font-bold text-indigo-900 mb-4">4. Conclusions de la Diagnosi</h2>
-            <div id="conclusions-text" class="text-justified text-slate-700 leading-relaxed space-y-4 bg-indigo-50 p-6 rounded-lg border-l-4 border-indigo-600">
-                <!-- Text generat dinàmicament -->
+        <!-- Secció 4: Conclusions Tècniques -->
+        <div class="print-section mb-10">
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de la Diagnosi</h2>
+            <div id="conclusions-text" class="text-technical text-slate-700 space-y-4 border-l-2 border-slate-900 pl-6 py-2">
+                <!-- Generat dinàmicament -->
             </div>
         </div>
 
-        <!-- Botons d'Acció -->
-        <div class="mt-12 pt-8 border-t border-slate-100 flex justify-center gap-4 no-print">
-            <button onclick="window.print()" class="bg-indigo-900 text-white px-10 py-4 rounded-xl font-bold shadow-xl hover:bg-indigo-800 transition transform hover:-translate-y-1">GENERAR INFORME (PDF)</button>
-            <button onclick="exportToWord()" class="bg-white border-2 border-indigo-900 text-indigo-900 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition shadow-lg">EXPORTAR A WORD</button>
+        <!-- Botons d'Acció Tècnica -->
+        <div class="mt-12 pt-8 border-t border-slate-100 flex justify-end gap-3 no-print">
+            <button onclick="window.print()" class="bg-slate-900 text-white px-6 py-2 rounded text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition">Generar PDF</button>
+            <button onclick="exportToWord()" class="bg-white border border-slate-300 text-slate-600 px-6 py-2 rounded text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition">Exportar Word</button>
         </div>
     </div>
 
@@ -140,15 +128,15 @@
         let ambitChart, tempChart;
 
         function processData() {
-            // Dades extretes del fitxer històric adjunt
+            // Dades basades en el fitxer Històric formacions.pdf proporcionat
             const activities = [
-                { curs: '2025-26', titol: 'El procés d’aprenentatge de la lectura, l’autonomia en la descodificació', hores: 21, ambit: 'Llengua' },
-                { curs: '2024-25', titol: 'Eines per la coeducació i l’educació afectivosexual', hores: 15, ambit: 'Coeducació' },
-                { curs: '2022-23', titol: 'Els usos lingüístics en l’àmbit educatiu', hores: 30, ambit: 'Llengua' },
-                { curs: '2022-23', titol: 'Formació a centre - Elaboració de l’Estratègia digital de centre (EDC)', hores: 40, ambit: 'Digital' },
-                { curs: '2021-22', titol: 'Grup impulsor araESCRIC', hores: 15, ambit: 'Llengua' },
-                { curs: '2021-22', titol: 'Prevenció de la violència masclista i coeducació', hores: 30, ambit: 'Coeducació' },
-                { curs: '2021-22', titol: 'L’escriptura en un centre educatiu: processos i pràctiques', hores: 30, ambit: 'Llengua' }
+                { curs: '2025-26', titol: 'El procés d’aprenentatge de la lectura, l’autonomia en la descodificació', hores: 21, ambit: 'Llengua', modalitat: 'Taller' },
+                { curs: '2024-25', titol: 'Eines per la coeducació i l’educació afectivosexual', hores: 15, ambit: 'Coeducació', modalitat: 'Taller' },
+                { curs: '2022-23', titol: 'Els usos lingüístics en l’àmbit educatiu', hores: 30, ambit: 'Llengua', modalitat: 'Taller' },
+                { curs: '2022-23', titol: 'Formació a centre - Elaboració de l’Estratègia digital de centre (EDC)', hores: 40, ambit: 'Digital', modalitat: 'FIC' },
+                { curs: '2021-22', titol: 'Grup impulsor araESCRIC', hores: 15, ambit: 'Llengua', modalitat: 'Grup de Treball' },
+                { curs: '2021-22', titol: 'Prevenció de la violència masclista i coeducació', hores: 30, ambit: 'Coeducació', modalitat: 'Taller' },
+                { curs: '2021-22', titol: 'L’escriptura en un centre educatiu: processos i pràctiques', hores: 30, ambit: 'Llengua', modalitat: 'FIC' }
             ];
 
             renderReport(activities);
@@ -163,29 +151,26 @@
             
             const ambitStats = {};
             const cursStats = {};
-            let totalHores = 0;
 
             data.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
-                tr.innerHTML = `<td class="px-5 py-4 font-bold text-slate-800">${item.curs}</td>
-                                <td class="px-5 py-4 text-slate-600">${item.titol}</td>
-                                <td class="px-5 py-4 text-right font-bold text-indigo-700">${item.hores} h</td>`;
+                tr.innerHTML = `<td class="px-4 py-3 border border-slate-200 font-bold text-slate-900">${item.curs}</td>
+                                <td class="px-4 py-3 border border-slate-200 uppercase text-[11px]">${item.titol}</td>
+                                <td class="px-4 py-3 border border-slate-200">${item.ambit}</td>
+                                <td class="px-4 py-3 border border-slate-200 text-right font-mono">${item.hores}</td>`;
                 tbody.appendChild(tr);
 
-                totalHores += item.hores;
                 ambitStats[item.ambit] = (ambitStats[item.ambit] || 0) + item.hores;
                 cursStats[item.curs] = (cursStats[item.curs] || 0) + item.hores;
             });
 
-            // Lògica per les conclusions
+            // Conclusions Tècniques Objectives
             const principalAmbit = Object.keys(ambitStats).reduce((a, b) => ambitStats[a] > ambitStats[b] ? a : b);
             const concContainer = document.getElementById('conclusions-text');
             concContainer.innerHTML = `
-                <p><strong>1. Hegemonia de l'àmbit lingüístic:</strong> Amb un total de ${ambitStats['Llengua']} hores acumulades, queda palès que l'ensenyament i aprenentatge de la llengua és la prioritat estratègica del centre, segurament vinculada als plans d'impuls a la lectura (ILEC) i l'escriptura (araESCRIC).</p>
-                <p><strong>2. Compromís amb la coeducació:</strong> La formació en coeducació i benestar ha mantingut una presència constant (${ambitStats['Coeducació']} hores), demostrant una aposta per la millora de la convivència i la perspectiva de gènere.</p>
-                <p><strong>3. Transformació Digital:</strong> El curs 2022-23 marca una fita en la càrrega horària degut a l'EDC, indicant que el centre ha superat la fase de diagnosi digital per entrar en la fase d'implementació.</p>
-                <p><strong>Proposta:</strong> Es recomana equilibrar la formació del curs vinent cap a metodologies globalitzades o avaluació competencial, atès que els àmbits de llengua i digital ja estan fortament consolidats.</p>
+                <p><strong>1. Àmbit dominant:</strong> L'eix de <strong>${principalAmbit}</strong> representa el volum principal d'hores certificades (${ambitStats[principalAmbit]} hores), indicant una especialització temàtica sostinguda en el temps.</p>
+                <p><strong>2. Distribució de modalitats:</strong> Es registra una alta prevalença de formació en format taller a centre i plans de formació interna (FIC), el que suggereix una modalitat de treball orientada a la pràctica de reflexió en grup.</p>
+                <p><strong>3. Continuïtat temporal:</strong> L'activitat formativa presenta una continuïtat en els darrers quatre cursos acadèmics, amb un pic d'activitat el curs 2022-23 coincidint amb la implementació de l'EDC (Estratègia Digital de Centre).</p>
             `;
 
             updateCharts(ambitStats, cursStats);
@@ -197,7 +182,8 @@
             if (tempChart) tempChart.destroy();
 
             Chart.defaults.font.family = "'Inter', sans-serif";
-            Chart.defaults.font.size = 13;
+            Chart.defaults.font.size = 11;
+            Chart.defaults.color = '#64748b';
 
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
                 type: 'doughnut',
@@ -205,18 +191,17 @@
                     labels: Object.keys(ambitStats),
                     datasets: [{
                         data: Object.values(ambitStats),
-                        backgroundColor: ['#1e1b4b', '#4f46e5', '#818cf8', '#c7d2fe'],
-                        hoverOffset: 15,
-                        borderWidth: 0
+                        backgroundColor: ['#0f172a', '#334155', '#64748b', '#94a3b8'],
+                        borderWidth: 1,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: { 
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 15, padding: 20, font: { weight: 'bold' } } },
-                        tooltip: { backgroundColor: '#1e1b4b', padding: 15, borderRadius: 8 }
+                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { weight: '600' } } }
                     },
-                    cutout: '70%'
+                    cutout: '75%'
                 }
             });
 
@@ -225,11 +210,9 @@
                 data: {
                     labels: Object.keys(cursStats),
                     datasets: [{
-                        label: 'Hores Totals',
                         data: Object.values(cursStats),
-                        backgroundColor: '#4f46e5',
-                        borderRadius: 10,
-                        barThickness: 45
+                        backgroundColor: '#0f172a',
+                        borderRadius: 2
                     }]
                 },
                 options: { 
@@ -237,8 +220,8 @@
                     scales: {
                         y: { 
                             beginAtZero: true, 
-                            grid: { color: '#f1f5f9' },
-                            title: { display: true, text: 'HORES CERTIFICADES', font: { size: 10, weight: 'bold' } }
+                            grid: { display: true, color: '#f1f5f9' },
+                            ticks: { font: { family: 'monospace' } }
                         },
                         x: { grid: { display: false } }
                     },
@@ -254,12 +237,11 @@
 
         function exportToWord() {
             const html = document.getElementById('report-container').innerHTML;
-            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'></head><body>";
-            const footer = "</body></html>";
-            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(header + html + footer);
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = source;
-            link.download = 'Informe_Diagnosi_Narratiu.doc';
+            link.href = url;
+            link.download = 'Diagnosi_Formacio_Tecnica.doc';
             link.click();
         }
     </script>
