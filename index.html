@@ -75,7 +75,7 @@
                     <thead>
                         <tr class="bg-slate-50 text-slate-700 uppercase tracking-tighter">
                             <th class="px-4 py-3 border border-slate-200 font-bold">Curs</th>
-                            <th class="px-4 py-3 border border-slate-200 font-bold">Formació</th>
+                            <th class="px-4 py-3 border border-slate-200 font-bold">Formació (Títol)</th>
                             <th class="px-4 py-3 border border-slate-200 font-bold">Àmbit</th>
                             <th class="px-4 py-3 border border-slate-200 font-bold text-right">Hores</th>
                         </tr>
@@ -131,11 +131,14 @@
 
         function parseGTAFData(text) {
             const activities = [];
+            // Separació per Cursos
             const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
             for (let i = 1; i < sections.length; i += 2) {
                 const curs = sections[i];
                 const content = sections[i + 1];
+                
+                // Dividim per activitats usant el codi 205...
                 const rawActivities = content.split(/\n(?=205\d{7,12}[A-Z]?)/);
                 
                 rawActivities.forEach(rawAct => {
@@ -144,16 +147,35 @@
                     
                     if (hores === 0) return;
 
-                    const lines = rawAct.trim().split('\n').map(l => l.trim()).filter(l => l.length > 2);
-                    let titolExtret = "";
-                    const contextTematic = lines.slice(0, 6).join(" ");
+                    // Netegem el bloc d'activitat per línies
+                    const allLines = rawAct.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     
-                    if (lines.length > 0) {
-                        let titleCandidate = /^\d+[A-Z]?$/.test(lines[0]) ? lines[1] : lines[0];
-                        if (titleCandidate && titleCandidate.includes('Modalitat')) titleCandidate = lines[2] || titleCandidate;
-                        titolExtret = titleCandidate ? titleCandidate.split('Modalitat')[0].trim() : "Activitat";
+                    let titolFinal = "";
+                    
+                    // L'estratègia per trobar el títol és agafar el que hi ha entre el codi i "Modalitat" o "Horari"
+                    let startIndex = allLines.findIndex(l => /^\d+[A-Z]?$/.test(l));
+                    if (startIndex === -1) startIndex = 0; // Si no detecta el codi exactament, comencem a la 0
+                    else startIndex++; // Saltem el codi per anar al títol
+                    
+                    let titleParts = [];
+                    for (let j = startIndex; j < allLines.length; j++) {
+                        const line = allLines[j];
+                        // Aturem la captura si trobem paraules de control
+                        if (line.includes('Modalitat') || line.includes('Horari') || line.includes('Inici') || line.includes('Dur.:')) {
+                            break;
+                        }
+                        titleParts.push(line);
+                    }
+                    
+                    titolFinal = titleParts.join(" ").replace(/,$/, "").trim();
+                    
+                    // Seguretat extra: si el títol encara conté "Horari" o "Durada", el buidem o posem genèric
+                    if (titolFinal.toLowerCase().includes("horari") || titolFinal.length < 3) {
+                        titolFinal = "Activitat de formació";
                     }
 
+                    // Context per a l'àmbit (totes les primeres línies)
+                    const contextTematic = allLines.slice(0, 10).join(" ");
                     let ambit = "Altres";
                     const context = normalizeText(contextTematic);
                     
@@ -169,7 +191,7 @@
                         ambit = "Metodologia";
                     }
 
-                    activities.push({ curs, titol: titolExtret, hores, ambit });
+                    activities.push({ curs, titol: titolFinal, hores, ambit });
                 });
             }
             return activities;
@@ -180,7 +202,7 @@
             if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
             if (activities.length === 0) {
-                alert("No s'han trobat dades. Verifica el format.");
+                alert("No s'han trobat dades vàlides. Revisa el format del text enganxat.");
                 return;
             }
             renderReport(activities);
@@ -198,8 +220,8 @@
             data.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td class="px-4 py-3 border border-slate-200 font-bold">${item.curs}</td>
-                                <td class="px-4 py-3 border border-slate-200 uppercase text-[10px]">${item.titol}</td>
-                                <td class="px-4 py-3 border border-slate-200 font-medium">${item.ambit}</td>
+                                <td class="px-4 py-3 border border-slate-200 text-[11px] font-medium leading-tight uppercase">${item.titol}</td>
+                                <td class="px-4 py-3 border border-slate-200">${item.ambit}</td>
                                 <td class="px-4 py-3 border border-slate-200 text-right font-mono">${item.hores}</td>`;
                 tbody.appendChild(tr);
                 ambitStats[item.ambit] = (ambitStats[item.ambit] || 0) + item.hores;
@@ -211,8 +233,8 @@
             const totalHours = Object.values(ambitStats).reduce((a, b) => a + b, 0);
 
             document.getElementById('conclusions-text').innerHTML = `
-                <p>S'ha realitzat l'anàlisi de <strong>${totalHours} hores</strong> totals de formació.</p>
-                <p>L'àmbit prioritari és <strong>${mainAmbit}</strong>.</p>
+                <p>S'ha analitzat un total de <strong>${totalHours} hores</strong> de formació realitzades pel centre.</p>
+                <p>L'àmbit amb més presència és <strong>${mainAmbit}</strong>, indicant una línia clara d'especialització o necessitat detectada.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -222,14 +244,9 @@
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
 
-            // Restauració de la paleta de colors vius original
             const colorPalette = {
-                'Llengua': '#2563eb',       // Blau
-                'Digital': '#10b981',       // Verd
-                'Coeducació': '#f59e0b',    // Ambre
-                'Inclusió': '#ef4444',      // Vermell
-                'Metodologia': '#8b5cf6',   // Lila
-                'Altres': '#94a3b8'         // Gris
+                'Llengua': '#2563eb', 'Digital': '#10b981', 'Coeducació': '#f59e0b',
+                'Inclusió': '#ef4444', 'Metodologia': '#8b5cf6', 'Altres': '#94a3b8'
             };
 
             const labels = Object.keys(ambitStats);
@@ -239,12 +256,7 @@
                 type: 'doughnut',
                 data: {
                     labels: labels,
-                    datasets: [{ 
-                        data: Object.values(ambitStats), 
-                        backgroundColor: colors,
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
+                    datasets: [{ data: Object.values(ambitStats), backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]
                 },
                 options: {
                     maintainAspectRatio: false,
