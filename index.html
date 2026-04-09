@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eina de Diagnosi de Formació CRP - Versió Robusta</title>
+    <title>Eina de Diagnosi de Formació CRP - Versió Robusta v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -11,7 +11,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; display: flex; justify-content: center; align-items: center; }
-        .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
+        .text-technical { text-align: justify; line-height: 1.7; font-size: 0.95rem; }
         .editable-center { border-bottom: 2px dashed #cbd5e1; padding: 2px 8px; color: #0f172a; cursor: text; }
         select.ambit-select {
             background: transparent;
@@ -37,12 +37,12 @@
                 <div class="p-2 bg-blue-600 rounded text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 </div>
-                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador de dades GTAF (Versió Estable)</h2>
+                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador de dades GTAF (v3.1 Robusta)</h2>
             </div>
-            <p class="text-sm text-slate-500 mb-4 italic">Enganxa l'històric del GTAF. L'app detectarà els cursos, títols i hores automàticament. Recorda esborrar els noms de les formadores:</p>
+            <p class="text-sm text-slate-500 mb-4 italic">Enganxa l'històric del GTAF per generar l'anàlisi rigorosa. Recorda esborrar les dades de les formadores:</p>
             <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-xs mb-4" placeholder="Curs 2025-2026..."></textarea>
             <div class="flex gap-4">
-                <button onclick="processData()" class="bg-blue-700 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-blue-800 transition uppercase tracking-tighter shadow-sm flex items-center gap-2">
+                <button onclick="processData()" class="bg-blue-700 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-blue-800 transition uppercase tracking-tighter shadow-sm">
                     Generar Diagnosi
                 </button>
                 <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition font-medium">Netejar</button>
@@ -54,9 +54,9 @@
     <div id="report-container" class="max-w-5xl mx-auto py-12 px-16 bg-white shadow-sm border border-slate-200 hidden">
         <header class="pb-10 border-b-2 border-slate-900 flex justify-between items-start mb-10">
             <div class="flex-1">
-                <h1 class="text-2xl font-bold text-slate-900 leading-none uppercase tracking-tighter">Informe de Diagnosi de Formació</h1>
+                <h1 class="text-2xl font-bold text-slate-900 leading-none uppercase tracking-tighter">Informe de Diagnosi de Formació Permanent</h1>
                 <div class="mt-4 flex items-center gap-2">
-                    <span class="text-slate-400 font-bold text-[10px] uppercase">Centre:</span>
+                    <span class="text-slate-400 font-bold text-[10px] uppercase">Centre Educatiu:</span>
                     <span id="center-name" contenteditable="true" class="editable-center font-bold text-lg">NOM DEL CENTRE</span>
                 </div>
             </div>
@@ -66,11 +66,10 @@
             </div>
         </header>
 
-        <!-- Taula d'activitats -->
+        <!-- Secció 1: Taula -->
         <div class="mb-10">
             <div class="flex justify-between items-end mb-4">
-                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2 flex-1">1. Resum d'Activitats Formatives</h2>
-                <span class="text-[10px] text-blue-600 font-bold mb-2 no-print">L'Àmbit és editable si la detecció automàtica falla</span>
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2 flex-1">1. Inventari d'Activitats Formatives</h2>
             </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full text-left text-xs border-collapse border border-slate-300" id="main-data-table">
@@ -87,25 +86,25 @@
             </div>
         </div>
 
-        <!-- Gràfics -->
+        <!-- Secció 2 i 3: Gràfics -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-            <div class="bg-white p-4 border border-slate-100 rounded">
-                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">2. Distribució per Àmbits (%)</h2>
+            <div class="bg-white p-4 border border-slate-100 rounded chart-container-div">
+                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">2. Distribució per Àmbits</h2>
                 <div class="chart-wrapper"><canvas id="canvas-donut"></canvas></div>
             </div>
-            <div class="bg-white p-4 border border-slate-100 rounded">
-                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">3. Evolució d'Hores per Curs</h2>
+            <div class="bg-white p-4 border border-slate-100 rounded chart-container-div">
+                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">3. Evolució de la Dedicació Horària</h2>
                 <div class="chart-wrapper"><canvas id="canvas-bar"></canvas></div>
             </div>
         </div>
 
-        <!-- Conclusions -->
+        <!-- Secció 4: Conclusions Rigoroses -->
         <div class="mb-10">
-            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de l'Anàlisi</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de la Diagnosi</h2>
             <div id="conclusions-text" class="text-technical text-slate-700 space-y-4 border-l-2 border-slate-900 pl-6 py-2"></div>
         </div>
 
-        <!-- Botons d'Acció -->
+        <!-- Accions -->
         <div class="mt-12 pt-8 border-t border-slate-100 flex justify-end gap-3 no-print">
             <button onclick="window.print()" class="bg-slate-200 text-slate-800 px-6 py-3 rounded font-bold text-xs uppercase hover:bg-slate-300 transition">Imprimir / PDF</button>
             <button onclick="exportToWord()" class="bg-blue-700 text-white px-8 py-3 rounded font-bold text-xs uppercase hover:bg-blue-800 shadow-lg transition">Exportar a Word</button>
@@ -117,7 +116,6 @@
         let ambitChart, tempChart;
         let globalActivities = [];
 
-        // Àmbits de l'Annex 4 ordenats per prioritat de detecció
         const ambitMapping = [
             { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'violencia', 'masclista', 'igualtat', 'diversitat sexual', 'feminismes'], color: '#f59e0b' },
             { id: "Inclusió", keywords: ['inclusio', 'nee', 'dua', 'atencio a la diversitat', 'suport', 'logopedia', 'trastorn', 'discapacitat'], color: '#ef4444' },
@@ -130,10 +128,7 @@
             { id: "STEAM", keywords: ['steam', 'ciencies', 'naturalesa', 'fisica', 'quimica', 'matematiques', 'laboratori'], color: '#1e293b' }
         ];
 
-        function normalize(t) { 
-            if (!t) return "";
-            return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""); 
-        }
+        function normalize(t) { return t ? t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") : ""; }
 
         function parseGTAFData(text) {
             const results = [];
@@ -143,7 +138,6 @@
             let match;
             let lastIdx = 0;
 
-            // Dividim per blocs de cursos acadèmics
             while ((match = cursRegex.exec(normalizedText)) !== null) {
                 if (lastIdx !== 0) segments.push(normalizedText.substring(lastIdx, match.index));
                 segments.push(match[1]);
@@ -155,33 +149,23 @@
                 const curs = segments[i];
                 const block = segments[i+1];
                 if (!block) continue;
-
-                // Busquem codis d'activitat 205...
                 const activityRegex = /(205\d{7,11}[A-Z]?)([\s\S]*?)(?=205\d{7,11}[A-Z]?|$)/g;
                 let actMatch;
-
                 while ((actMatch = activityRegex.exec(block)) !== null) {
                     const activityContent = actMatch[2];
                     const hoursMatch = activityContent.match(/Dur\.:\s*(\d+)\s*h/i);
                     if (!hoursMatch) continue;
-
-                    // Extreure títol net fins a la paraula Modalitat/Horari
-                    let titolRaw = activityContent.split(/Modalitat/i)[0].trim();
-                    titolRaw = titolRaw.split(/Horari/i)[0].trim();
+                    let titolRaw = activityContent.split(/Modalitat/i)[0].split(/Horari/i)[0].trim();
                     const titol = titolRaw.replace(/\s+/g, ' ').trim();
                     if (!titol || titol.length < 5) continue;
-
-                    // Classificació Automàtica
                     let ambit = "Altres";
                     const searchBase = normalize(titol + " " + activityContent);
-                    
                     for (const map of ambitMapping) {
                         if (map.keywords.some(k => searchBase.includes(normalize(k)))) {
                             ambit = map.id;
                             break;
                         }
                     }
-
                     results.push({ curs, titol, hores: parseInt(hoursMatch[1]), ambit });
                 }
             }
@@ -191,10 +175,7 @@
         function processData() {
             const raw = document.getElementById('raw-data').value;
             globalActivities = parseGTAFData(raw);
-            if (!globalActivities.length) {
-                alert("No s'ha pogut detectar cap activitat. Assegura't de copiar el text de l'històric correctament.");
-                return;
-            }
+            if (!globalActivities.length) return alert("Error en el processament de dades.");
             render();
         }
 
@@ -203,16 +184,13 @@
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('ca-ES');
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = '';
-            
             globalActivities.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-100";
-                
                 let optionsHtml = `<option value="Altres">Altres</option>`;
                 ambitMapping.forEach(m => {
                     optionsHtml += `<option value="${m.id}" ${item.ambit === m.id ? 'selected' : ''}>${m.id}</option>`;
                 });
-
                 tr.innerHTML = `
                     <td class="px-3 py-3 font-bold">${item.curs}</td>
                     <td class="px-3 py-3 uppercase text-[10px] font-bold tracking-tight">${item.titol}</td>
@@ -225,7 +203,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-
             calculateStatsAndCharts();
         }
 
@@ -237,98 +214,114 @@
         function calculateStatsAndCharts() {
             const statsAmbit = {};
             const statsCurs = {};
-
             globalActivities.forEach(item => {
                 statsAmbit[item.ambit] = (statsAmbit[item.ambit] || 0) + item.hores;
                 statsCurs[item.curs] = (statsCurs[item.curs] || 0) + item.hores;
             });
-
             updateCharts(statsAmbit, statsCurs);
-            
-            const main = Object.keys(statsAmbit).sort((a,b) => statsAmbit[b]-statsAmbit[a])[0];
-            const totalHores = Object.values(statsAmbit).reduce((a,b)=>a+b,0);
-            
-            document.getElementById('conclusions-text').innerHTML = `
-                <p>A partir de l'històric analitzat, es comptabilitza una dedicació formativa total de <strong>${totalHores} hores</strong> certificades pel Departament.</p>
-                <p>L'àmbit amb major pes és <strong>${main}</strong>, fet que demostra un focus clar en aquest vector de millora. La resta de la formació es diversifica en els àmbits indicats a la distribució percentual.</p>
+            generateRigorouseConclusions(statsAmbit, statsCurs);
+        }
+
+        function generateRigorouseConclusions(sAmbit, sCurs) {
+            const sortedAmbits = Object.entries(sAmbit).sort((a,b) => b[1]-a[1]);
+            const totalHores = Object.values(sAmbit).reduce((a,b)=>a+b,0);
+            const numAmbits = sortedAmbits.length;
+            const majoritari = sortedAmbits[0];
+            const cursos = Object.keys(sCurs).sort();
+
+            let html = `
+                <p>L'anàlisi sistemàtica de l'històric de formació permanent del centre permet extreure les següents conclusions tècniques:</p>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>Volum de Transferència:</strong> S'ha consolidat una càrrega lectiva total de <strong>${totalHores} hores</strong> certificades, xifra que reflecteix una implicació sostinguda del claustre en la millora de les competències docents.</li>
+                    <li><strong>Vector de Millora Preferent:</strong> L'àmbit de <strong>${majoritari[0]}</strong> representa el principal eix estratègic del centre, concentrant un ${Math.round((majoritari[1]/totalHores)*100)}% de la dedicació total. Aquesta dada indica una alineació clara de la formació amb els objectius del Projecte Educatiu de Centre (PEC).</li>
+                    <li><strong>Continuïtat Temporal:</strong> L'evolució entre els cursos ${cursos[0]} i ${cursos[cursos.length-1]} mostra una trajectòria ${Object.keys(sCurs).length > 2 ? 'consolidada' : 'en fase inicial'} de formació en centre. Es detecten ${sortedAmbits.filter(a => a[1] > 20).length} àmbits amb caràcter recurrent, assegurant la sostenibilitat pedagògica de les innovacions introduïdes.</li>
+                    <li><strong>Cohesió Temàtica:</strong> La presència de ${numAmbits} àmbits diferenciats segons l'Annex 4 suggereix una diagnosi equilibrada, tot i que s'observen oportunitats de reforç en àrees amb menor representació horària per tal de garantir una competència docent integral.</li>
+                </ul>
             `;
+            document.getElementById('conclusions-text').innerHTML = html;
         }
 
         function updateCharts(sAmbit, sCurs) {
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
-
             const labels = Object.keys(sAmbit);
             const colors = labels.map(l => ambitMapping.find(m => m.id === l)?.color || '#94a3b8');
-
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
                 type: 'doughnut',
                 data: { labels, datasets: [{ data: Object.values(sAmbit), backgroundColor: colors }] },
                 options: { 
                     maintainAspectRatio: false, 
+                    animation: false,
                     plugins: { 
                         legend: { position: 'bottom', labels: { font: { size: 9 } } },
-                        datalabels: { 
-                            color: '#fff', 
-                            font: { weight: 'bold', size: 10 }, 
-                            formatter: (v, ctx) => {
-                                let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                return Math.round((v * 100) / sum) + "%";
-                            }
-                        }
+                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => Math.round((v * 100) / ctx.dataset.data.reduce((a, b) => a + b, 0)) + "%" }
                     } 
                 }
             });
-
             tempChart = new Chart(document.getElementById('canvas-bar'), {
                 type: 'bar',
-                data: { 
-                    labels: Object.keys(sCurs).sort(), 
-                    datasets: [{ label: 'Hores', data: Object.values(sCurs), backgroundColor: '#1e293b' }] 
-                },
+                data: { labels: Object.keys(sCurs).sort(), datasets: [{ label: 'Hores', data: Object.values(sCurs), backgroundColor: '#1e293b' }] },
                 options: { 
                     maintainAspectRatio: false, 
+                    animation: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Hores Totals' } } }
+                    scales: { y: { beginAtZero: true } }
                 }
             });
+        }
+
+        async function exportToWord() {
+            const center = document.getElementById('center-name').innerText;
+            const container = document.getElementById('report-container');
+            
+            // Convertim els gràfics a imatges
+            const imgAmbit = document.getElementById('canvas-donut').toDataURL("image/png");
+            const imgCurs = document.getElementById('canvas-bar').toDataURL("image/png");
+
+            // Clonem per netejar
+            const content = container.cloneNode(true);
+            content.querySelectorAll('.no-print').forEach(n => n.remove());
+            
+            // Substituïm els selects per text
+            content.querySelectorAll('select').forEach(s => {
+                const span = document.createElement('span');
+                span.innerText = s.value;
+                s.parentNode.replaceChild(span, s);
+            });
+
+            // Substituïm els canvas per les imatges convertides
+            const canvasDivs = content.querySelectorAll('.chart-wrapper');
+            if (canvasDivs[0]) canvasDivs[0].innerHTML = `<img src="${imgAmbit}" width="400" />`;
+            if (canvasDivs[1]) canvasDivs[1].innerHTML = `<img src="${imgCurs}" width="400" />`;
+
+            const html = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.5; color: #333; }
+                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                    th, td { border: 1px solid #999; padding: 10px; font-size: 10pt; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    h1 { color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; font-size: 18pt; }
+                    h2 { color: #333; border-bottom: 1px solid #eee; margin-top: 30px; font-size: 14pt; }
+                    .text-technical { text-align: justify; }
+                    ul { margin-left: 20px; }
+                    img { display: block; margin: 10px auto; }
+                </style>
+                </head>
+                <body>${content.innerHTML}</body></html>
+            `;
+            
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Diagnosi_Formacio_${center.replace(/\s+/g, '_')}.doc`;
+            link.click();
         }
 
         function clearData() {
             document.getElementById('raw-data').value = '';
             document.getElementById('report-container').classList.add('hidden');
-            globalActivities = [];
-        }
-
-        function exportToWord() {
-            const center = document.getElementById('center-name').innerText;
-            const content = document.getElementById('report-container').cloneNode(true);
-            content.querySelectorAll('.no-print').forEach(n => n.remove());
-            
-            // Fix per passar de selects a text en el document Word
-            const selects = content.querySelectorAll('select');
-            selects.forEach(s => {
-                const val = s.value;
-                const span = document.createElement('span');
-                span.innerText = val;
-                s.parentNode.replaceChild(span, s);
-            });
-
-            const html = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><style>
-                    body { font-family: sans-serif; }
-                    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-                    th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; }
-                    h1 { border-bottom: 2px solid black; }
-                </style></head>
-                <body>${content.innerHTML}</body></html>
-            `;
-            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Diagnosi_${center.replace(/\s+/g, '_')}.doc`;
-            link.click();
         }
     </script>
 </body>
