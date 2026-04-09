@@ -77,8 +77,7 @@
                         <tr class="bg-slate-100 text-slate-800">
                             <th class="px-3 py-3 border border-slate-400 font-bold">CURS</th>
                             <th class="px-3 py-3 border border-slate-400 font-bold">TÍTOL DE LA FORMACIÓ</th>
-                            <th class="px-3 py-3 border border-slate-400 font-bold">ÀMBIT (ANNEX 4)</th>
-                            <th class="px-3 py-3 border border-slate-400 font-bold text-right">HORES</th>
+                            <th class="px-3 py-3 border border-slate-400 font-bold">ÀMBIT</th>
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="text-slate-700"></tbody>
@@ -101,7 +100,7 @@
         <!-- Secció 4: Conclusions Rigoroses -->
         <div class="mb-10">
             <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de la Diagnosi</h2>
-            <div id="conclusions-text" class="text-technical text-slate-700 border-l-2 border-slate-900 pl-6 py-2"></div>
+            <div id="conclusions-text" class="text-technical text-slate-700 border-l-2 border-slate-900 pl-6 py-2 space-y-4"></div>
         </div>
 
         <!-- Accions -->
@@ -230,10 +229,20 @@
             const cursos = Object.keys(sCurs).sort();
             const percentual = Math.round((majoritari[1]/totalHores)*100);
 
-            // Redactat unificat sense títols en negreta ni llistes
-            let text = `L'anàlisi sistemàtica de l'històric de formació permanent del centre permet concloure que s'ha consolidat una càrrega lectiva total de ${totalHores} hores certificades, xifra que evidencia una implicació sostinguda del claustre en la millora de les competències docents. Com a vector de millora preferent, destaca l'àmbit de ${majoritari[0]}, que concentra un ${percentual}% de la dedicació total, indicant una alineació directa de la formació amb els objectius estratègics del Projecte Educatiu de Centre. Respecte a l'evolució temporal entre els cursos ${cursos[0]} i ${cursos[cursos.length-1]}, es descriu una trajectòria ${Object.keys(sCurs).length > 2 ? 'consolidada' : 'en fase inicial'} en la qual es detecten àmbits amb caràcter recurrent que asseguren la sostenibilitat pedagògica de les innovacions introduïdes. Finalment, la presència de fins a ${numAmbits} àrees diferenciades segons l'Annex 4 suggereix una diagnosi equilibrada, tot i que s'identifiquen oportunitats de reforç en aquelles matèries amb menor representació horària per tal d'assolir una competència docent plenament integral.`;
+            let p1 = `L'anàlisi sistemàtica de l'històric de formació permanent del centre permet concloure que s'ha consolidat una càrrega lectiva total de ${totalHores} hores certificades, xifra que evidencia una implicació sostinguda del claustre en la millora de les competències docents.`;
+            
+            let p2 = `Com a vector de millora preferent, destaca l'àmbit de ${majoritari[0]}, que concentra un ${percentual}% de la dedicació total, indicant una alineació directa de la formació amb els objectius estratègics del Projecte Educatiu de Centre.`;
+            
+            let p3 = `Respecte a l'evolució temporal entre els cursos ${cursos[0]} i ${cursos[cursos.length-1]}, es descriu una trajectòria ${Object.keys(sCurs).length > 2 ? 'consolidada' : 'en fase inicial'} en la qual es detecten àmbits amb caràcter recurrent que asseguren la sostenibilitat pedagògica de les innovacions introduïdes.`;
+            
+            let p4 = `Finalment, la presència de fins a ${numAmbits} àrees diferenciades segons el document de “Criteris, instruccions i orientacions per a la formació permanent del professorat” suggereix una diagnosi equilibrada, tot i que s'identifiquen oportunitats de reforç en aquelles matèries amb menor representació horària per tal d'assolir una competència docent plenament integral.`;
 
-            document.getElementById('conclusions-text').innerHTML = `<p>${text}</p>`;
+            document.getElementById('conclusions-text').innerHTML = `
+                <p>${p1}</p>
+                <p>${p2}</p>
+                <p>${p3}</p>
+                <p>${p4}</p>
+            `;
         }
 
         function updateCharts(sAmbit, sCurs) {
