@@ -11,10 +11,20 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .chart-wrapper { position: relative; height: 320px; width: 100%; margin: 1.5rem 0; display: flex; justify-content: center; align-items: center; }
-        .chart-container-medium { width: 100%; max-width: 600px; height: 320px; }
         .text-technical { text-align: justify; line-height: 1.6; font-size: 0.95rem; }
-        .export-image { display: none; }
         .editable-center { border-bottom: 2px dashed #cbd5e1; padding: 2px 8px; color: #0f172a; cursor: text; }
+        select.ambit-select {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        select.ambit-select:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
@@ -28,7 +38,7 @@
                 </div>
                 <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador de dades GTAF (Annex 4)</h2>
             </div>
-            <p class="text-sm text-slate-500 mb-4 italic">Enganxa el text de l'històric (incloent els codis 205... i els noms de les activitats):</p>
+            <p class="text-sm text-slate-500 mb-4 italic">Enganxa el text de l'històric (incloent els codis 205... i els noms de les activitats). Assegura't d'esborrar el nom de les formadores:</p>
             <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-xs mb-4" placeholder="Curs 2025-2026..."></textarea>
             <div class="flex gap-4">
                 <button onclick="processData()" class="bg-blue-700 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-blue-800 transition uppercase tracking-tighter shadow-sm flex items-center gap-2">
@@ -55,7 +65,10 @@
         </header>
 
         <div class="mb-10">
-            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">1. Resum d'Activitats Formatives</h2>
+            <div class="flex justify-between items-end mb-4">
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2 flex-1">1. Resum d'Activitats Formatives</h2>
+                <span class="text-[10px] text-blue-600 font-bold mb-2 no-print">Pots editar l'àmbit si la detecció no és correcta</span>
+            </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full text-left text-xs border-collapse border border-slate-300" id="main-data-table">
                     <thead>
@@ -96,17 +109,18 @@
     <script>
         Chart.register(ChartDataLabels);
         let ambitChart, tempChart;
+        let globalActivities = [];
 
-        // Àmbits oficials de l'Annex 4 (Criteris 25-26)
+        // Àmbits oficials de l'Annex 4 (Prioritzats per evitar falsos positius)
         const ambitMapping = [
-            { id: "Llengua i literatura", keywords: ['lectura', 'escriptura', 'araescric', 'catala', 'castella', 'verbal', 'oral', 'literatura', 'linguistics', 'desciframent', 'descodificacio'], color: '#2563eb' },
-            { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'computacional', 'audiovisual', 'robotica', 'ia', 'xarxes'], color: '#10b981' },
-            { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'violencia', 'masclista', 'igualtat'], color: '#f59e0b' },
-            { id: "Curriculum i Avaluació", keywords: ['curriculum', 'avaluacio', 'situacions', 'aprenentatge', 'metodologia', 'didactiques', 'programacio'], color: '#8b5cf6' },
-            { id: "Inclusió", keywords: ['inclusio', 'diversitat', 'suport', 'nee', 'dua', 'atencio', 'logopedia'], color: '#ef4444' },
-            { id: "Acció tutorial", keywords: ['tutorial', 'orientacio', 'familias', 'comunitat'], color: '#06b6d4' },
+            { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'violencia', 'masclista', 'igualtat', 'diversitat sexual'], color: '#f59e0b' },
+            { id: "Inclusió", keywords: ['inclusio', 'nee', 'dua', 'atencio a la diversitat', 'suport', 'logopedia', 'trastorn'], color: '#ef4444' },
+            { id: "Llengua i literatura", keywords: ['lectura', 'escriptura', 'araescric', 'catala', 'castella', 'verbal', 'oral', 'literatura', 'linguistics', 'desciframent', 'descodificacio', 'usos linguistics'], color: '#2563eb' },
+            { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'computacional', 'audiovisual', 'robotica', 'ia', 'xarxes', 'moodle', 'drive'], color: '#10b981' },
+            { id: "Curriculum i Avaluació", keywords: ['curriculum', 'avaluacio', 'situacions d\'aprenentatge', 'metodologia', 'didactiques', 'programacio'], color: '#8b5cf6' },
+            { id: "Acció tutorial", keywords: ['tutorial', 'orientacio', 'families', 'comunitat'], color: '#06b6d4' },
             { id: "Educació artística", keywords: ['artistica', 'musica', 'dansa', 'teatre', 'dibuix', 'plastica'], color: '#f43f5e' },
-            { id: "Salut i Benestar", keywords: ['salut', 'emocional', 'benestar', 'mental', 'laborals', 'prevencio'], color: '#ec4899' },
+            { id: "Salut i Benestar", keywords: ['salut', 'emocional', 'benestar', 'mental', 'laborals', 'prevencio de riscos'], color: '#ec4899' },
             { id: "STEAM", keywords: ['steam', 'ciencies', 'naturalesa', 'fisica', 'quimica', 'matematiques'], color: '#1e293b' }
         ];
 
@@ -114,61 +128,49 @@
 
         function parseGTAFData(text) {
             const results = [];
-            // Netegem el text de tabs i espais múltiples
             const normalizedText = text.replace(/\t/g, ' ').replace(/\n\s*\n/g, '\n');
-            
-            // 1. Identifiquem els cursos per separar l'històric en blocs
             const cursRegex = /Curs\s+(\d{4}-\d{2,4})/gi;
             const segments = [];
             let match;
             let lastIdx = 0;
 
             while ((match = cursRegex.exec(normalizedText)) !== null) {
-                if (lastIdx !== 0) {
-                    segments.push(normalizedText.substring(lastIdx, match.index));
-                }
-                segments.push(match[1]); // Guardem l'any
+                if (lastIdx !== 0) segments.push(normalizedText.substring(lastIdx, match.index));
+                segments.push(match[1]);
                 lastIdx = cursRegex.lastIndex;
             }
             segments.push(normalizedText.substring(lastIdx));
 
-            // 2. Processem cada curs
             for (let i = 0; i < segments.length; i += 2) {
                 const curs = segments[i];
                 const block = segments[i+1];
                 if (!block) continue;
 
-                // Busquem codis d'activitat (205...)
                 const activityRegex = /(205\d{7,11}[A-Z]?)([\s\S]*?)(?=205\d{7,11}[A-Z]?|$)/g;
                 let actMatch;
 
                 while ((actMatch = activityRegex.exec(block)) !== null) {
                     const activityContent = actMatch[2];
-                    
-                    // Busquem hores
                     const hoursMatch = activityContent.match(/Dur\.:\s*(\d+)\s*h/i);
                     if (!hoursMatch) continue;
-                    const hores = parseInt(hoursMatch[1]);
 
-                    // Extreure el títol (tot el que hi ha abans de "Modalitat")
                     let titolRaw = activityContent.split(/Modalitat/i)[0].trim();
-                    // Netegem possibles restes d'horaris que s'hagin colat si estan abans
                     titolRaw = titolRaw.split(/Horari/i)[0].trim();
-                    
                     const titol = titolRaw.replace(/\s+/g, ' ').trim();
                     if (!titol) continue;
 
-                    // Classificació per àmbit
                     let ambit = "Altres";
                     const searchBase = normalize(titol + " " + activityContent);
+                    
+                    // L'ordre importa: comprovem Coeducació abans que Digital
                     for (const map of ambitMapping) {
-                        if (map.keywords.some(k => searchBase.includes(k))) {
+                        if (map.keywords.some(k => searchBase.includes(normalize(k)))) {
                             ambit = map.id;
                             break;
                         }
                     }
 
-                    results.push({ curs, titol, hores, ambit });
+                    results.push({ curs, titol, hores: parseInt(hoursMatch[1]), ambit });
                 }
             }
             return results;
@@ -176,33 +178,56 @@
 
         function processData() {
             const raw = document.getElementById('raw-data').value;
-            const activities = parseGTAFData(raw);
-            if (!activities.length) {
-                alert("No s'han pogut extreure activitats. Revisa que hagis copiat el text correctament des de 'Curs X-Y' fins les hores.");
+            globalActivities = parseGTAFData(raw);
+            if (!globalActivities.length) {
+                alert("No s'han trobat activitats. Revisa el format del text.");
                 return;
             }
-            render(activities);
+            render();
         }
 
-        function render(data) {
+        function render() {
             document.getElementById('report-container').classList.remove('hidden');
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('ca-ES');
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = '';
             
-            const statsAmbit = {};
-            const statsCurs = {};
-
-            data.forEach(item => {
+            globalActivities.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-100";
+                
+                // Generem el select per l'àmbit
+                let optionsHtml = `<option value="Altres">Altres</option>`;
+                ambitMapping.forEach(m => {
+                    optionsHtml += `<option value="${m.id}" ${item.ambit === m.id ? 'selected' : ''}>${m.id}</option>`;
+                });
+
                 tr.innerHTML = `
                     <td class="px-3 py-3 font-bold">${item.curs}</td>
                     <td class="px-3 py-3 uppercase text-[10px] font-bold tracking-tight">${item.titol}</td>
-                    <td class="px-3 py-3 italic text-slate-500 font-medium">${item.ambit}</td>
+                    <td class="px-3 py-3">
+                        <select class="ambit-select text-[10px] italic font-medium text-slate-600" onchange="updateAmbit(${index}, this.value)">
+                            ${optionsHtml}
+                        </select>
+                    </td>
                     <td class="px-3 py-3 text-right font-mono font-bold">${item.hores} h</td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            calculateStatsAndCharts();
+        }
+
+        function updateAmbit(index, newValue) {
+            globalActivities[index].ambit = newValue;
+            calculateStatsAndCharts();
+        }
+
+        function calculateStatsAndCharts() {
+            const statsAmbit = {};
+            const statsCurs = {};
+
+            globalActivities.forEach(item => {
                 statsAmbit[item.ambit] = (statsAmbit[item.ambit] || 0) + item.hores;
                 statsCurs[item.curs] = (statsCurs[item.curs] || 0) + item.hores;
             });
@@ -212,7 +237,7 @@
             const main = Object.keys(statsAmbit).sort((a,b) => statsAmbit[b]-statsAmbit[a])[0];
             document.getElementById('conclusions-text').innerHTML = `
                 <p>L'anàlisi de l'històric mostra una càrrega formativa total de <strong>${Object.values(statsAmbit).reduce((a,b)=>a+b,0)} hores</strong>.</p>
-                <p>L'àmbit amb més incidència és <strong>${main}</strong>, reflectint les prioritats del centre en aquest període.</p>
+                <p>L'àmbit amb més dedicació és <strong>${main}</strong>, seguit de la resta de matèries especificades a la taula.</p>
             `;
         }
 
@@ -230,21 +255,36 @@
                     maintainAspectRatio: false, 
                     plugins: { 
                         legend: { position: 'bottom', labels: { font: { size: 9 } } },
-                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: v => v + 'h' }
+                        datalabels: { 
+                            color: '#fff', 
+                            font: { weight: 'bold', size: 10 }, 
+                            formatter: (v, ctx) => {
+                                let sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                return Math.round((v * 100) / sum) + "%";
+                            }
+                        }
                     } 
                 }
             });
 
             tempChart = new Chart(document.getElementById('canvas-bar'), {
                 type: 'bar',
-                data: { labels: Object.keys(sCurs).sort(), datasets: [{ data: Object.values(sCurs), backgroundColor: '#1e293b' }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                data: { 
+                    labels: Object.keys(sCurs).sort(), 
+                    datasets: [{ label: 'Hores', data: Object.values(sCurs), backgroundColor: '#1e293b' }] 
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
             });
         }
 
         function clearData() {
             document.getElementById('raw-data').value = '';
             document.getElementById('report-container').classList.add('hidden');
+            globalActivities = [];
         }
 
         function exportToWord() {
@@ -252,13 +292,21 @@
             const content = document.getElementById('report-container').cloneNode(true);
             content.querySelectorAll('.no-print').forEach(n => n.remove());
             
+            // Convertim els selects en text simple per l'exportació
+            const selects = content.querySelectorAll('select');
+            selects.forEach(s => {
+                const val = s.value;
+                const span = document.createElement('span');
+                span.innerText = val;
+                s.parentNode.replaceChild(span, s);
+            });
+
             const html = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset='utf-8'><style>
                     body { font-family: sans-serif; }
                     table { border-collapse: collapse; width: 100%; }
                     th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; }
-                    h1 { border-bottom: 2px solid black; }
                 </style></head>
                 <body>${content.innerHTML}</body></html>
             `;
