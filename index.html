@@ -138,7 +138,7 @@
                 .replace(/[^a-z0-9\s]/g, "");
         }
 
-        // Línia 46: Mapping d'àmbits segons Annex 4 dels Criteris 25-26
+        // Mapping d'àmbits segons Annex 4 dels Criteris 25-26
         const ambitMapping = [
             { id: "Llengua i literatura", keywords: ['lectura', 'escriptura', 'araescric', 'comprensio', 'linguistics', 'oral', 'catala', 'castella', 'literatura', 'angles', 'frances', 'estrangeres'], color: '#2563eb' },
             { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'robotica', 'tecnologia', 'audiovisual', 'ia', 'intelligencia', 'situacions'], color: '#10b981' },
@@ -152,49 +152,46 @@
 
         function parseGTAFData(text) {
             const activities = [];
-            // Dividim el text per cursos per no barrejar dades
-            const cursSections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
+            // Netegem el text d'espais horitzontals excessius (tabs)
+            const cleanText = text.replace(/\t+/g, ' ');
+            
+            // Dividim per cursos
+            const cursSections = cleanText.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
             for (let i = 1; i < cursSections.length; i += 2) {
                 const curs = cursSections[i];
                 const content = cursSections[i + 1];
                 
-                // Busquem els blocs que comencen amb un codi d'activitat de 10-12 xifres tipus 205...
-                // Els codis solen anar seguits del títol o de salts de línia.
+                // Busquem els blocs que comencen amb un codi d'activitat 205...
                 const activityBlocks = content.split(/(?=205\d{7,11}[A-Z]?)/g);
                 
                 activityBlocks.forEach(block => {
-                    if (!block.trim() || !block.startsWith('205')) return;
+                    if (!block.trim() || !block.match(/^205\d+/)) return;
 
-                    // 1. Extreure Hores
+                    // 1. Extreure Hores (format act. o for.)
                     const hoursMatch = block.match(/Dur\.:\s*(\d+)\s*h/i);
                     const hores = hoursMatch ? parseInt(hoursMatch[1]) : 0;
                     if (hores === 0) return;
 
-                    // 2. Extreure Títol (Lògica millorada per agafar línies entre codi i modalitat)
+                    // 2. Extreure Títol: Agitem línies fins a trobar 'Modalitat'
                     const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     let rawTitle = "";
                     
-                    // La primera línia conté el codi i potser part del títol
-                    const firstLineMatch = lines[0].match(/^205\d+[A-Z]?\s*(.*)$/);
-                    if (firstLineMatch && firstLineMatch[1]) {
-                        rawTitle = firstLineMatch[1];
-                    }
+                    // La primera línia sol ser només el codi o codi + part del títol
+                    const firstLine = lines[0].replace(/^205\d+[A-Z]?\s*/, "").trim();
+                    if (firstLine) rawTitle = firstLine;
 
-                    // Afegim línies següents fins que trobem una paraula de control
                     for (let j = 1; j < lines.length; j++) {
-                        const l = lines[j];
-                        if (l.match(/Modalitat|Horari|Inici:|Fi:|Ses\.:|Dur\.:/i)) break;
-                        rawTitle += " " + l;
+                        if (lines[j].includes("Modalitat")) break;
+                        rawTitle += (rawTitle ? " " : "") + lines[j];
                     }
 
-                    // Neteja final de títol
-                    let titol = rawTitle.replace(/,\s*$/, "").replace(/\s+/g, " ").trim();
-                    if (!titol || titol.length < 5) titol = "Formació / Projecte de centre";
+                    let titol = rawTitle.replace(/\s+/g, " ").trim();
+                    if (!titol || titol.length < 3) titol = "Activitat de formació";
 
                     // 3. Determinar Àmbit
                     let ambit = "Altres";
-                    const context = normalizeText(block);
+                    const context = normalizeText(block + " " + titol);
                     for (const map of ambitMapping) {
                         if (map.keywords.some(k => context.includes(k))) {
                             ambit = map.id;
@@ -213,7 +210,7 @@
             if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
             if (activities.length === 0) {
-                alert("No s'ha pogut detectar cap activitat. Revisa el format de text copiat.");
+                alert("No s'han detectat activitats. Assegura't de copiar el bloc sencer des del 'Curs' fins les hores.");
                 return;
             }
             renderReport(activities);
@@ -247,7 +244,7 @@
             document.getElementById('conclusions-text').innerHTML = `
                 <p>A partir de les dades de l'històric GTAF, s'ha identificat un volum total de <strong>${totalHours} hores</strong> de formació.</p>
                 <p>L'àmbit prioritari de treball ha estat <strong>${mainAmbit}</strong>, representant el <strong>${Math.round(ambitStats[mainAmbit]*100/totalHours)}%</strong> de la càrrega lectiva.</p>
-                <p>Es recomana mantenir aquestes línies de treball assegurant la transferència a l'aula.</p>
+                <p>Aquest focus suggereix una especialització del claustre en aquesta àrea temàtica durant el període analitzat.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -274,7 +271,10 @@
                     animation: false,
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } },
-                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => Math.round(v * 100 / ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0)) + "%" }
+                        datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => {
+                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            return Math.round(v * 100 / sum) + "%";
+                        }}
                     }
                 }
             });
