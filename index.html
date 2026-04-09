@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eina de Diagnosi de Formació CRP</title>
+    <title>Eina de Diagnosi de Formació CRP - Versió Robusta</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,15 +30,16 @@
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
 
+    <!-- Panell de Configuració (No es mostra al imprimir) -->
     <div class="max-w-5xl mx-auto py-8 px-6 no-print" id="config-panel">
         <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 mb-8">
             <div class="flex items-center gap-3 mb-4">
                 <div class="p-2 bg-blue-600 rounded text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                 </div>
-                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador de dades GTAF (Annex 4)</h2>
+                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador de dades GTAF (Versió Estable)</h2>
             </div>
-            <p class="text-sm text-slate-500 mb-4 italic">Enganxa el text de l'històric (incloent els codis 205... i els noms de les activitats). Assegura't d'esborrar el nom de les formadores:</p>
+            <p class="text-sm text-slate-500 mb-4 italic">Enganxa l'històric del GTAF. L'app detectarà els cursos, títols i hores automàticament. Recorda esborrar els noms de les formadores:</p>
             <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-xs mb-4" placeholder="Curs 2025-2026..."></textarea>
             <div class="flex gap-4">
                 <button onclick="processData()" class="bg-blue-700 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-blue-800 transition uppercase tracking-tighter shadow-sm flex items-center gap-2">
@@ -49,6 +50,7 @@
         </div>
     </div>
 
+    <!-- Informe Generat -->
     <div id="report-container" class="max-w-5xl mx-auto py-12 px-16 bg-white shadow-sm border border-slate-200 hidden">
         <header class="pb-10 border-b-2 border-slate-900 flex justify-between items-start mb-10">
             <div class="flex-1">
@@ -59,15 +61,16 @@
                 </div>
             </div>
             <div class="text-right border-l border-slate-200 pl-6">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Data</p>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Data de l'informe</p>
                 <span id="current-date" class="font-mono text-sm font-bold text-slate-700">--/--/----</span>
             </div>
         </header>
 
+        <!-- Taula d'activitats -->
         <div class="mb-10">
             <div class="flex justify-between items-end mb-4">
                 <h2 class="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2 flex-1">1. Resum d'Activitats Formatives</h2>
-                <span class="text-[10px] text-blue-600 font-bold mb-2 no-print">Pots editar l'àmbit si la detecció no és correcta</span>
+                <span class="text-[10px] text-blue-600 font-bold mb-2 no-print">L'Àmbit és editable si la detecció automàtica falla</span>
             </div>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full text-left text-xs border-collapse border border-slate-300" id="main-data-table">
@@ -84,24 +87,27 @@
             </div>
         </div>
 
+        <!-- Gràfics -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
             <div class="bg-white p-4 border border-slate-100 rounded">
                 <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">2. Distribució per Àmbits (%)</h2>
                 <div class="chart-wrapper"><canvas id="canvas-donut"></canvas></div>
             </div>
             <div class="bg-white p-4 border border-slate-100 rounded">
-                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">3. Hores per Curs</h2>
+                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">3. Evolució d'Hores per Curs</h2>
                 <div class="chart-wrapper"><canvas id="canvas-bar"></canvas></div>
             </div>
         </div>
 
+        <!-- Conclusions -->
         <div class="mb-10">
-            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de l'Anàlisi</h2>
             <div id="conclusions-text" class="text-technical text-slate-700 space-y-4 border-l-2 border-slate-900 pl-6 py-2"></div>
         </div>
 
+        <!-- Botons d'Acció -->
         <div class="mt-12 pt-8 border-t border-slate-100 flex justify-end gap-3 no-print">
-            <button onclick="window.print()" class="bg-slate-200 text-slate-800 px-6 py-3 rounded font-bold text-xs uppercase hover:bg-slate-300 transition">Imprimir PDF</button>
+            <button onclick="window.print()" class="bg-slate-200 text-slate-800 px-6 py-3 rounded font-bold text-xs uppercase hover:bg-slate-300 transition">Imprimir / PDF</button>
             <button onclick="exportToWord()" class="bg-blue-700 text-white px-8 py-3 rounded font-bold text-xs uppercase hover:bg-blue-800 shadow-lg transition">Exportar a Word</button>
         </div>
     </div>
@@ -111,20 +117,23 @@
         let ambitChart, tempChart;
         let globalActivities = [];
 
-        // Àmbits oficials de l'Annex 4 (Prioritzats per evitar falsos positius)
+        // Àmbits de l'Annex 4 ordenats per prioritat de detecció
         const ambitMapping = [
-            { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'violencia', 'masclista', 'igualtat', 'diversitat sexual'], color: '#f59e0b' },
-            { id: "Inclusió", keywords: ['inclusio', 'nee', 'dua', 'atencio a la diversitat', 'suport', 'logopedia', 'trastorn'], color: '#ef4444' },
+            { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'violencia', 'masclista', 'igualtat', 'diversitat sexual', 'feminismes'], color: '#f59e0b' },
+            { id: "Inclusió", keywords: ['inclusio', 'nee', 'dua', 'atencio a la diversitat', 'suport', 'logopedia', 'trastorn', 'discapacitat'], color: '#ef4444' },
             { id: "Llengua i literatura", keywords: ['lectura', 'escriptura', 'araescric', 'catala', 'castella', 'verbal', 'oral', 'literatura', 'linguistics', 'desciframent', 'descodificacio', 'usos linguistics'], color: '#2563eb' },
-            { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'computacional', 'audiovisual', 'robotica', 'ia', 'xarxes', 'moodle', 'drive'], color: '#10b981' },
-            { id: "Curriculum i Avaluació", keywords: ['curriculum', 'avaluacio', 'situacions d\'aprenentatge', 'metodologia', 'didactiques', 'programacio'], color: '#8b5cf6' },
-            { id: "Acció tutorial", keywords: ['tutorial', 'orientacio', 'families', 'comunitat'], color: '#06b6d4' },
-            { id: "Educació artística", keywords: ['artistica', 'musica', 'dansa', 'teatre', 'dibuix', 'plastica'], color: '#f43f5e' },
-            { id: "Salut i Benestar", keywords: ['salut', 'emocional', 'benestar', 'mental', 'laborals', 'prevencio de riscos'], color: '#ec4899' },
-            { id: "STEAM", keywords: ['steam', 'ciencies', 'naturalesa', 'fisica', 'quimica', 'matematiques'], color: '#1e293b' }
+            { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'computacional', 'audiovisual', 'robotica', 'ia', 'xarxes', 'moodle', 'drive', 'tecnologia'], color: '#10b981' },
+            { id: "Curriculum i Avaluació", keywords: ['curriculum', 'avaluacio', 'situacions d\'aprenentatge', 'metodologia', 'didactiques', 'programacio', 'competencial'], color: '#8b5cf6' },
+            { id: "Acció tutorial", keywords: ['tutorial', 'orientacio', 'families', 'comunitat', 'acompanyament'], color: '#06b6d4' },
+            { id: "Educació artística", keywords: ['artistica', 'musica', 'dansa', 'teatre', 'dibuix', 'plastica', 'visual'], color: '#f43f5e' },
+            { id: "Salut i Benestar", keywords: ['salut', 'emocional', 'benestar', 'mental', 'laborals', 'prevencio de riscos', 'clima'], color: '#ec4899' },
+            { id: "STEAM", keywords: ['steam', 'ciencies', 'naturalesa', 'fisica', 'quimica', 'matematiques', 'laboratori'], color: '#1e293b' }
         ];
 
-        function normalize(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""); }
+        function normalize(t) { 
+            if (!t) return "";
+            return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""); 
+        }
 
         function parseGTAFData(text) {
             const results = [];
@@ -134,6 +143,7 @@
             let match;
             let lastIdx = 0;
 
+            // Dividim per blocs de cursos acadèmics
             while ((match = cursRegex.exec(normalizedText)) !== null) {
                 if (lastIdx !== 0) segments.push(normalizedText.substring(lastIdx, match.index));
                 segments.push(match[1]);
@@ -146,6 +156,7 @@
                 const block = segments[i+1];
                 if (!block) continue;
 
+                // Busquem codis d'activitat 205...
                 const activityRegex = /(205\d{7,11}[A-Z]?)([\s\S]*?)(?=205\d{7,11}[A-Z]?|$)/g;
                 let actMatch;
 
@@ -154,15 +165,16 @@
                     const hoursMatch = activityContent.match(/Dur\.:\s*(\d+)\s*h/i);
                     if (!hoursMatch) continue;
 
+                    // Extreure títol net fins a la paraula Modalitat/Horari
                     let titolRaw = activityContent.split(/Modalitat/i)[0].trim();
                     titolRaw = titolRaw.split(/Horari/i)[0].trim();
                     const titol = titolRaw.replace(/\s+/g, ' ').trim();
-                    if (!titol) continue;
+                    if (!titol || titol.length < 5) continue;
 
+                    // Classificació Automàtica
                     let ambit = "Altres";
                     const searchBase = normalize(titol + " " + activityContent);
                     
-                    // L'ordre importa: comprovem Coeducació abans que Digital
                     for (const map of ambitMapping) {
                         if (map.keywords.some(k => searchBase.includes(normalize(k)))) {
                             ambit = map.id;
@@ -180,7 +192,7 @@
             const raw = document.getElementById('raw-data').value;
             globalActivities = parseGTAFData(raw);
             if (!globalActivities.length) {
-                alert("No s'han trobat activitats. Revisa el format del text.");
+                alert("No s'ha pogut detectar cap activitat. Assegura't de copiar el text de l'històric correctament.");
                 return;
             }
             render();
@@ -196,7 +208,6 @@
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-100";
                 
-                // Generem el select per l'àmbit
                 let optionsHtml = `<option value="Altres">Altres</option>`;
                 ambitMapping.forEach(m => {
                     optionsHtml += `<option value="${m.id}" ${item.ambit === m.id ? 'selected' : ''}>${m.id}</option>`;
@@ -235,9 +246,11 @@
             updateCharts(statsAmbit, statsCurs);
             
             const main = Object.keys(statsAmbit).sort((a,b) => statsAmbit[b]-statsAmbit[a])[0];
+            const totalHores = Object.values(statsAmbit).reduce((a,b)=>a+b,0);
+            
             document.getElementById('conclusions-text').innerHTML = `
-                <p>L'anàlisi de l'històric mostra una càrrega formativa total de <strong>${Object.values(statsAmbit).reduce((a,b)=>a+b,0)} hores</strong>.</p>
-                <p>L'àmbit amb més dedicació és <strong>${main}</strong>, seguit de la resta de matèries especificades a la taula.</p>
+                <p>A partir de l'històric analitzat, es comptabilitza una dedicació formativa total de <strong>${totalHores} hores</strong> certificades pel Departament.</p>
+                <p>L'àmbit amb major pes és <strong>${main}</strong>, fet que demostra un focus clar en aquest vector de millora. La resta de la formació es diversifica en els àmbits indicats a la distribució percentual.</p>
             `;
         }
 
@@ -276,7 +289,7 @@
                 options: { 
                     maintainAspectRatio: false, 
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Hores Totals' } } }
                 }
             });
         }
@@ -292,7 +305,7 @@
             const content = document.getElementById('report-container').cloneNode(true);
             content.querySelectorAll('.no-print').forEach(n => n.remove());
             
-            // Convertim els selects en text simple per l'exportació
+            // Fix per passar de selects a text en el document Word
             const selects = content.querySelectorAll('select');
             selects.forEach(s => {
                 const val = s.value;
@@ -305,15 +318,16 @@
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                 <head><meta charset='utf-8'><style>
                     body { font-family: sans-serif; }
-                    table { border-collapse: collapse; width: 100%; }
+                    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
                     th, td { border: 1px solid #ccc; padding: 8px; font-size: 10pt; }
+                    h1 { border-bottom: 2px solid black; }
                 </style></head>
                 <body>${content.innerHTML}</body></html>
             `;
             const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `Diagnosi_${center}.doc`;
+            link.download = `Diagnosi_${center.replace(/\s+/g, '_')}.doc`;
             link.click();
         }
     </script>
