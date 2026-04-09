@@ -25,6 +25,10 @@
         }
         .editable-center:hover { background-color: #f8fafc; border-bottom-color: #0f172a; }
         .editable-center:focus { outline: none; background-color: #f1f5f9; border-bottom-style: solid; }
+        
+        @media print {
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -32,15 +36,21 @@
     <!-- Panell de Configuració Tècnica -->
     <div class="max-w-5xl mx-auto py-8 px-6 no-print" id="config-panel">
         <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 mb-8">
-            <h2 class="text-lg font-bold text-slate-800 mb-4 uppercase tracking-wide">
-                Configuració de l'Anàlisi Tècnica
-            </h2>
-            <p class="text-sm text-slate-500 mb-4 italic">Enganxa aquí el text copiat directament de l'Històric de Formacions:</p>
-            <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-xs mb-4" placeholder="Curs 2025-2026... Dur.: 21 h..."></textarea>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-slate-900 rounded text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Analitzador d'Històrics GTAF</h2>
+            </div>
+            
+            <p class="text-sm text-slate-500 mb-4 italic">Copia el contingut de l'Històric de Formacions del GTAF, esborrant el nom de les formadores i enganxa'l a sota:</p>
+            <textarea id="raw-data" rows="8" class="w-full p-4 border border-slate-300 rounded focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-xs mb-4" placeholder="Curs 2025-2026... 2050610555C..."></textarea>
             
             <div class="flex gap-4">
-                <button onclick="processData()" class="bg-slate-900 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-slate-800 transition uppercase tracking-tighter shadow-sm">Processar Dades Reals</button>
-                <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition font-medium">Netejar</button>
+                <button onclick="processData()" class="bg-slate-900 text-white px-6 py-2.5 rounded font-bold text-sm hover:bg-slate-800 transition uppercase tracking-tighter shadow-sm flex items-center gap-2">
+                    <span>Generar Informe de Diagnosi</span>
+                </button>
+                <button onclick="clearData()" class="text-slate-500 px-4 py-2 text-sm hover:text-red-700 transition font-medium">Netejar dades</button>
             </div>
         </div>
     </div>
@@ -51,8 +61,8 @@
             <div class="flex-1">
                 <h1 class="text-2xl font-bold text-slate-900 leading-none uppercase tracking-tighter">Informe de Diagnosi de Formació</h1>
                 <div class="mt-4 flex items-center gap-2">
-                    <span class="text-slate-400 font-bold text-xs uppercase">Centre:</span>
-                    <span id="center-name" contenteditable="true" class="editable-center font-bold text-lg">ESCRIU AQUÍ EL NOM DEL CENTRE</span>
+                    <span class="text-slate-400 font-bold text-[10px] uppercase">Centre:</span>
+                    <span id="center-name" contenteditable="true" class="editable-center font-bold text-lg">NOM DEL CENTRE EDUCATIU</span>
                 </div>
             </div>
             <div class="text-right border-l border-slate-200 pl-6">
@@ -64,20 +74,20 @@
         <div class="mb-10">
             <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">0. Introducció</h2>
             <div class="text-technical text-slate-700">
-                <p>Aquest informe recull i analitza el bagatge formatiu del centre a partir de les dades extretes de l'històric de formacions. L'objectiu és oferir una visió clara de la distribució temàtica i l'esforç formatiu per cursos.</p>
+                <p>Aquest informe ofereix una diagnosi tècnica sobre les línies de formació seguides pel centre educatiu. L'anàlisi es basa en la classificació oficial de matèries i àmbits del Departament d'Educació (Annex 4, Orientacions 25-26).</p>
             </div>
         </div>
 
         <div class="mb-10">
-            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">1. Resum d'Activitats Detectades</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">1. Resum d'Activitats Formatives</h2>
             <div class="overflow-x-auto mt-4">
                 <table class="w-full text-left text-xs border-collapse border border-slate-200" id="main-data-table">
                     <thead>
                         <tr class="bg-slate-50 text-slate-700 uppercase tracking-tighter">
-                            <th class="px-4 py-3 border border-slate-200 font-bold">Curs</th>
-                            <th class="px-4 py-3 border border-slate-200 font-bold">Formació (Títol)</th>
-                            <th class="px-4 py-3 border border-slate-200 font-bold">Àmbit</th>
-                            <th class="px-4 py-3 border border-slate-200 font-bold text-right">Hores</th>
+                            <th class="px-3 py-3 border border-slate-200 font-bold">Curs</th>
+                            <th class="px-3 py-3 border border-slate-200 font-bold">Títol de la Formació</th>
+                            <th class="px-3 py-3 border border-slate-200 font-bold">Àmbit (Criteris 25-26)</th>
+                            <th class="px-3 py-3 border border-slate-200 font-bold text-right">Hores</th>
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="text-slate-600"></tbody>
@@ -85,22 +95,21 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-12 mb-10">
-            <div id="section-donut">
-                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">2. Distribució per Àmbits (%)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <div id="section-donut" class="bg-white p-4 border border-slate-100 rounded">
+                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">2. Pes per Àmbits (%)</h2>
                 <div class="chart-wrapper">
                     <div class="chart-container-medium">
                         <canvas id="canvas-donut"></canvas>
                     </div>
-                    <!-- Contenidor per a imatges exportades -->
                     <div id="img-donut-container" class="export-image"></div>
                 </div>
             </div>
             
-            <div id="section-bar">
-                <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">3. Evolució de Dedicació (Hores)</h2>
+            <div id="section-bar" class="bg-white p-4 border border-slate-100 rounded">
+                <h2 class="text-xs font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-50 pb-2">3. Evolució Temporal (Hores)</h2>
                 <div class="chart-wrapper">
-                    <div class="chart-container-medium" style="max-width: 450px;">
+                    <div class="chart-container-medium">
                         <canvas id="canvas-bar"></canvas>
                     </div>
                     <div id="img-bar-container" class="export-image"></div>
@@ -109,12 +118,15 @@
         </div>
 
         <div class="mb-10">
-            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest border-b border-slate-100 pb-2">4. Conclusions de Diagnosi</h2>
             <div id="conclusions-text" class="text-technical text-slate-700 space-y-4 border-l-2 border-slate-900 pl-6 py-2"></div>
         </div>
 
         <div class="mt-12 pt-8 border-t border-slate-100 flex justify-end gap-3 no-print">
-            <button onclick="exportToWord()" class="bg-slate-900 text-white px-8 py-3 rounded font-bold text-xs uppercase tracking-widest hover:bg-slate-800 shadow-lg transition">Exportar a Word per a Drive</button>
+            <button onclick="exportToWord()" class="bg-slate-900 text-white px-8 py-3 rounded font-bold text-xs uppercase tracking-widest hover:bg-slate-800 shadow-lg transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Exportar per a Google Drive (.doc)
+            </button>
         </div>
     </div>
 
@@ -129,66 +141,63 @@
                 .replace(/[^a-z0-9\s]/g, "");
         }
 
+        // Definició ampliada d'àmbits segons Criteris 25-26
+        const ambitMapping = [
+            { id: "Llengua i literatura", keywords: ['llengua', 'literatura', 'escric', 'lectura', 'oral', 'comprensio', 'linguistic', 'catala', 'castella', 'aranes', 'angles', 'frances', 'estrangeres'], color: '#2563eb' },
+            { id: "Competència digital", keywords: ['digital', 'edc', 'eines', 'robotica', 'tecnologia', 'audiovisual', 'computacional', 'internet', 'ia', 'intelligencia'], color: '#10b981' },
+            { id: "Coeducació i gènere", keywords: ['coeducacio', 'genere', 'afectivosexual', 'igualtat', 'violencia', 'masclista'], color: '#f59e0b' },
+            { id: "Inclusió i diversitat", keywords: ['inclusio', 'diversitat', 'suport', 'nee', 'universal', 'udl', 'dua', 'atencio', 'logopedia'], color: '#ef4444' },
+            { id: "Metodologia i currículum", keywords: ['metodologia', 'curriculum', 'situacions', 'aprenentatge', 'avaluacio', 'projecte', 'innovacio', 'estrategies'], color: '#8b5cf6' },
+            { id: "Salut i Benestar", keywords: ['salut', 'emocional', 'benestar', 'riscos', 'mentals', 'prevencio'], color: '#ec4899' },
+            { id: "Acció tutorial", keywords: ['tutorial', 'orientacio', 'familia', 'comunitat'], color: '#06b6d4' },
+            { id: "Art i Música", keywords: ['artistica', 'musica', 'dansa', 'teatre', 'visual', 'plastica', 'cinema'], color: '#f43f5e' }
+        ];
+
         function parseGTAFData(text) {
             const activities = [];
-            // Separació per Cursos
-            const sections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
+            const cursSections = text.split(/Curs\s+(\d{4}-\d{2,4})/gi);
             
-            for (let i = 1; i < sections.length; i += 2) {
-                const curs = sections[i];
-                const content = sections[i + 1];
+            for (let i = 1; i < cursSections.length; i += 2) {
+                const curs = cursSections[i];
+                const content = cursSections[i + 1];
                 
-                // Dividim per activitats usant el codi 205...
+                // Cerca per codis 205... que inicien bloc
                 const rawActivities = content.split(/\n(?=205\d{7,12}[A-Z]?)/);
                 
                 rawActivities.forEach(rawAct => {
                     const hoursMatch = rawAct.match(/Dur\.:\s*(\d+)\s*h/i);
                     const hores = hoursMatch ? parseInt(hoursMatch[1]) : 0;
-                    
                     if (hores === 0) return;
 
-                    // Netegem el bloc d'activitat per línies
                     const allLines = rawAct.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     
+                    // Lògica per extreure TÍTOL real (evitant horaris i modalitats)
                     let titolFinal = "";
-                    
-                    // L'estratègia per trobar el títol és agafar el que hi ha entre el codi i "Modalitat" o "Horari"
                     let startIndex = allLines.findIndex(l => /^\d+[A-Z]?$/.test(l));
-                    if (startIndex === -1) startIndex = 0; // Si no detecta el codi exactament, comencem a la 0
-                    else startIndex++; // Saltem el codi per anar al títol
+                    startIndex = startIndex === -1 ? 0 : startIndex + 1;
                     
                     let titleParts = [];
                     for (let j = startIndex; j < allLines.length; j++) {
                         const line = allLines[j];
-                        // Aturem la captura si trobem paraules de control
-                        if (line.includes('Modalitat') || line.includes('Horari') || line.includes('Inici') || line.includes('Dur.:')) {
-                            break;
-                        }
+                        // Aturem la captura si apareixen paraules de gestió o horaris
+                        if (line.match(/Modalitat|Horari|Inici|Dur\.:|Fi:|Ses\.:|h\./i)) break;
                         titleParts.push(line);
                     }
                     
                     titolFinal = titleParts.join(" ").replace(/,$/, "").trim();
-                    
-                    // Seguretat extra: si el títol encara conté "Horari" o "Durada", el buidem o posem genèric
-                    if (titolFinal.toLowerCase().includes("horari") || titolFinal.length < 3) {
-                        titolFinal = "Activitat de formació";
+                    if (titolFinal.length < 4 || titolFinal.toLowerCase().includes('horari')) {
+                        titolFinal = "Formació interna / Altres";
                     }
 
-                    // Context per a l'àmbit (totes les primeres línies)
-                    const contextTematic = allLines.slice(0, 10).join(" ");
+                    // Classificació d'àmbit
                     let ambit = "Altres";
-                    const context = normalizeText(contextTematic);
+                    const context = normalizeText(rawAct);
                     
-                    if (context.includes('lectura') || context.includes('llengua') || context.includes('escric') || context.includes('linguistic') || context.includes('oral') || context.includes('comprensio')) {
-                        ambit = "Llengua";
-                    } else if (context.includes('digital') || context.includes('edc') || context.includes('robotica') || context.includes('computacional') || context.includes('eines') || context.includes('estrategia digital')) {
-                        ambit = "Digital";
-                    } else if (context.includes('coeducacio') || context.includes('afectivosexual') || context.includes('violencia') || context.includes('genere') || context.includes('igualtat')) {
-                        ambit = "Coeducació";
-                    } else if (context.includes('inclusio') || context.includes('diversitat') || context.includes('universal') || context.includes('suport') || context.includes('nee')) {
-                        ambit = "Inclusió";
-                    } else if (context.includes('projecte') || context.includes('innovacio') || context.includes('aprenentatge') || context.includes('metodologia')) {
-                        ambit = "Metodologia";
+                    for (const map of ambitMapping) {
+                        if (map.keywords.some(k => context.includes(k))) {
+                            ambit = map.id;
+                            break;
+                        }
                     }
 
                     activities.push({ curs, titol: titolFinal, hores, ambit });
@@ -202,7 +211,7 @@
             if (!rawText.trim()) return;
             const activities = parseGTAFData(rawText);
             if (activities.length === 0) {
-                alert("No s'han trobat dades vàlides. Revisa el format del text enganxat.");
+                alert("No s'ha detectat cap activitat. Comprova que has copiat el text correctament des del PDF.");
                 return;
             }
             renderReport(activities);
@@ -219,10 +228,10 @@
 
             data.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="px-4 py-3 border border-slate-200 font-bold">${item.curs}</td>
-                                <td class="px-4 py-3 border border-slate-200 text-[11px] font-medium leading-tight uppercase">${item.titol}</td>
-                                <td class="px-4 py-3 border border-slate-200">${item.ambit}</td>
-                                <td class="px-4 py-3 border border-slate-200 text-right font-mono">${item.hores}</td>`;
+                tr.innerHTML = `<td class="px-3 py-3 border border-slate-200 font-bold">${item.curs}</td>
+                                <td class="px-3 py-3 border border-slate-200 text-[10px] font-semibold leading-tight uppercase text-slate-800">${item.titol}</td>
+                                <td class="px-3 py-3 border border-slate-200 text-[10px] font-medium text-slate-500 italic">${item.ambit}</td>
+                                <td class="px-3 py-3 border border-slate-200 text-right font-mono font-bold">${item.hores} h</td>`;
                 tbody.appendChild(tr);
                 ambitStats[item.ambit] = (ambitStats[item.ambit] || 0) + item.hores;
                 cursStats[item.curs] = (cursStats[item.curs] || 0) + item.hores;
@@ -233,8 +242,9 @@
             const totalHours = Object.values(ambitStats).reduce((a, b) => a + b, 0);
 
             document.getElementById('conclusions-text').innerHTML = `
-                <p>S'ha analitzat un total de <strong>${totalHours} hores</strong> de formació realitzades pel centre.</p>
-                <p>L'àmbit amb més presència és <strong>${mainAmbit}</strong>, indicant una línia clara d'especialització o necessitat detectada.</p>
+                <p>A partir de les dades analitzades, es detecta un esforç formatiu acumulat de <strong>${totalHours} hores</strong>.</p>
+                <p>L'àmbit amb major càrrega formativa és <strong>${mainAmbit}</strong>, que representa un <strong>${Math.round(ambitStats[mainAmbit]*100/totalHours)}%</strong> de la dedicació total.</p>
+                <p>Aquesta distribució suggereix una alineació del centre amb les línies estratègiques del Departament, especialment en relació amb els Criteris 2025-2026.</p>
             `;
             
             updateCharts(ambitStats, cursStats);
@@ -244,29 +254,40 @@
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
 
-            const colorPalette = {
-                'Llengua': '#2563eb', 'Digital': '#10b981', 'Coeducació': '#f59e0b',
-                'Inclusió': '#ef4444', 'Metodologia': '#8b5cf6', 'Altres': '#94a3b8'
-            };
-
             const labels = Object.keys(ambitStats);
-            const colors = labels.map(label => colorPalette[label] || '#94a3b8');
+            const colors = labels.map(label => {
+                const map = ambitMapping.find(m => m.id === label);
+                return map ? map.color : '#94a3b8';
+            });
 
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
                 type: 'doughnut',
                 data: {
                     labels: labels,
-                    datasets: [{ data: Object.values(ambitStats), backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]
+                    datasets: [{ 
+                        data: Object.values(ambitStats), 
+                        backgroundColor: colors, 
+                        borderColor: '#fff', 
+                        borderWidth: 2 
+                    }]
                 },
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
                     plugins: {
-                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } },
-                        datalabels: { color: '#fff', font: { weight: 'bold', size: 11 }, formatter: (v, ctx) => {
-                            let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            return (v * 100 / sum).toFixed(0) + "%";
-                        }}
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { boxWidth: 8, font: { size: 9, weight: '600' }, padding: 15 } 
+                        },
+                        datalabels: { 
+                            color: '#fff', 
+                            font: { weight: 'bold', size: 10 }, 
+                            formatter: (v, ctx) => {
+                                let sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                let p = (v * 100 / sum);
+                                return p > 5 ? Math.round(p) + "%" : "";
+                            }
+                        }
                     }
                 }
             });
@@ -276,16 +297,19 @@
                 type: 'bar',
                 data: {
                     labels: sortedCurs,
-                    datasets: [{ data: sortedCurs.map(c => cursStats[c]), backgroundColor: '#1e293b' }]
+                    datasets: [{ data: sortedCurs.map(c => cursStats[c]), backgroundColor: '#0f172a', borderRadius: 4 }]
                 },
                 options: {
                     maintainAspectRatio: false,
                     animation: false,
                     plugins: { 
                         legend: { display: false }, 
-                        datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { size: 10, weight: 'bold' } } 
+                        datalabels: { anchor: 'end', align: 'top', color: '#0f172a', font: { size: 10, weight: 'bold' } } 
                     },
-                    scales: { y: { beginAtZero: true, grid: { display: false } } }
+                    scales: { 
+                        y: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+                        x: { ticks: { font: { size: 9, weight: 'bold' } } }
+                    }
                 }
             });
         }
@@ -299,7 +323,7 @@
             const donutBase64 = ambitChart.toBase64Image();
             const barBase64 = tempChart.toBase64Image();
             
-            document.getElementById('img-donut-container').innerHTML = `<img src="${donutBase64}" width="500">`;
+            document.getElementById('img-donut-container').innerHTML = `<img src="${donutBase64}" width="450">`;
             document.getElementById('img-bar-container').innerHTML = `<img src="${barBase64}" width="400">`;
 
             const centerName = document.getElementById('center-name').innerText;
@@ -311,16 +335,15 @@
 
             const style = `
                 <style>
-                    @page Section1 { size: 595.3pt 841.9pt; margin: 70.85pt 70.85pt 70.85pt 70.85pt; mso-header-margin: 35.4pt; mso-footer-margin: 35.4pt; mso-paper-source: 0; }
-                    div.Section1 { page: Section1; }
-                    body { font-family: 'Arial', sans-serif; line-height: 1.4; color: #333; }
-                    h1 { font-size: 20pt; font-weight: bold; border-bottom: 2pt solid black; padding-bottom: 5pt; text-transform: uppercase; }
-                    h2 { font-size: 13pt; font-weight: bold; margin-top: 15pt; border-bottom: 1pt solid #eee; padding-bottom: 3pt; text-transform: uppercase; color: #000; }
-                    table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
-                    th, td { border: 0.5pt solid #ccc; padding: 5pt; font-size: 9pt; }
-                    th { background-color: #f9f9f9; font-weight: bold; text-align: left; }
-                    .text-technical { text-align: justify; margin-bottom: 8pt; font-size: 10pt; }
-                    img { display: block; margin: 10pt auto; }
+                    @page Section1 { size: 595.3pt 841.9pt; margin: 70.85pt 70.85pt 70.85pt 70.85pt; }
+                    div.Section1 { page: Section1; font-family: 'Arial', sans-serif; }
+                    h1 { font-size: 18pt; font-weight: bold; border-bottom: 2pt solid black; padding-bottom: 5pt; text-transform: uppercase; color: #000; }
+                    h2 { font-size: 12pt; font-weight: bold; margin-top: 20pt; border-bottom: 1pt solid #ccc; padding-bottom: 3pt; text-transform: uppercase; color: #333; }
+                    table { border-collapse: collapse; width: 100%; margin: 15pt 0; border: 0.5pt solid #000; }
+                    th { background-color: #f3f4f6; font-weight: bold; font-size: 9pt; border: 0.5pt solid #000; padding: 6pt; }
+                    td { border: 0.5pt solid #000; padding: 5pt; font-size: 8.5pt; color: #333; }
+                    .text-technical { text-align: justify; margin-bottom: 10pt; font-size: 10pt; line-height: 1.5; }
+                    img { display: block; margin: 20pt auto; }
                 </style>
             `;
 
@@ -335,7 +358,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `Diagnosi_${centerName.replace(/\s+/g, '_')}.doc`;
+            link.download = `Diagnosi_Formacio_${centerName.replace(/\s+/g, '_')}.doc`;
             link.click();
             
             document.getElementById('img-donut-container').innerHTML = '';
