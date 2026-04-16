@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eina de Diagnosi de Formació CRP - Versió Robusta v3.2</title>
+    <title>Eina de Diagnosi de Formació CRP - Versió Robusta v3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -30,7 +30,7 @@
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
 
-    <!-- Panell de Configuració (No es mostra al imprimir) -->
+    <!-- Panell de Configuració -->
     <div class="max-w-5xl mx-auto py-8 px-6 no-print" id="config-panel">
         <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 mb-8">
             <div class="flex items-center gap-3 mb-4">
@@ -78,6 +78,7 @@
                             <th class="px-3 py-3 border border-slate-400 font-bold">CURS</th>
                             <th class="px-3 py-3 border border-slate-400 font-bold">TÍTOL DE LA FORMACIÓ</th>
                             <th class="px-3 py-3 border border-slate-400 font-bold">ÀMBIT</th>
+                            <th class="px-3 py-3 border border-slate-400 font-bold text-right">HORES</th>
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="text-slate-700"></tbody>
@@ -191,14 +192,14 @@
                     optionsHtml += `<option value="${m.id}" ${item.ambit === m.id ? 'selected' : ''}>${m.id}</option>`;
                 });
                 tr.innerHTML = `
-                    <td class="px-3 py-3 font-bold">${item.curs}</td>
+                    <td class="px-3 py-3 font-bold text-[10px]">${item.curs}</td>
                     <td class="px-3 py-3 uppercase text-[10px] font-bold tracking-tight">${item.titol}</td>
                     <td class="px-3 py-3">
                         <select class="ambit-select text-[10px] italic font-medium text-slate-600" onchange="updateAmbit(${index}, this.value)">
                             ${optionsHtml}
                         </select>
                     </td>
-                    <td class="px-3 py-3 text-right font-mono font-bold">${item.hores} h</td>
+                    <td class="px-3 py-3 text-right font-mono font-bold text-[10px]">${item.hores} h</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -226,14 +227,14 @@
             const totalHores = Object.values(sAmbit).reduce((a,b)=>a+b,0);
             const numAmbits = sortedAmbits.length;
             const majoritari = sortedAmbits[0];
-            const cursos = Object.keys(sCurs).sort();
+            const cursosKeys = Object.keys(sCurs).sort();
             const percentual = Math.round((majoritari[1]/totalHores)*100);
 
             let p1 = `L'anàlisi sistemàtica de l'històric de formació permanent del centre permet concloure que s'ha consolidat una càrrega lectiva total de ${totalHores} hores certificades, xifra que evidencia una implicació sostinguda del claustre en la millora de les competències docents.`;
             
             let p2 = `Com a vector de millora preferent, destaca l'àmbit de ${majoritari[0]}, que concentra un ${percentual}% de la dedicació total, indicant una alineació directa de la formació amb els objectius estratègics del Projecte Educatiu de Centre.`;
             
-            let p3 = `Respecte a l'evolució temporal entre els cursos ${cursos[0]} i ${cursos[cursos.length-1]}, es descriu una trajectòria ${Object.keys(sCurs).length > 2 ? 'consolidada' : 'en fase inicial'} en la qual es detecten àmbits amb caràcter recurrent que asseguren la sostenibilitat pedagògica de les innovacions introduïdes.`;
+            let p3 = `Respecte a l'evolució temporal entre els cursos ${cursosKeys[0]} i ${cursosKeys[cursosKeys.length-1]}, es descriu una trajectòria ${Object.keys(sCurs).length > 2 ? 'consolidada' : 'en fase inicial'} en la qual es detecten àmbits amb caràcter recurrent que asseguren la sostenibilitat pedagògica de les innovacions introduïdes.`;
             
             let p4 = `Finalment, la presència de fins a ${numAmbits} àrees diferenciades segons el document de “Criteris, instruccions i orientacions per a la formació permanent del professorat” suggereix una diagnosi equilibrada, tot i que s'identifiquen oportunitats de reforç en aquelles matèries amb menor representació horària per tal d'assolir una competència docent plenament integral.`;
 
@@ -248,11 +249,13 @@
         function updateCharts(sAmbit, sCurs) {
             if (ambitChart) ambitChart.destroy();
             if (tempChart) tempChart.destroy();
-            const labels = Object.keys(sAmbit);
-            const colors = labels.map(l => ambitMapping.find(m => m.id === l)?.color || '#94a3b8');
+            
+            const ambitLabels = Object.keys(sAmbit);
+            const ambitColors = ambitLabels.map(l => ambitMapping.find(m => m.id === l)?.color || '#94a3b8');
+            
             ambitChart = new Chart(document.getElementById('canvas-donut'), {
                 type: 'doughnut',
-                data: { labels, datasets: [{ data: Object.values(sAmbit), backgroundColor: colors }] },
+                data: { labels: ambitLabels, datasets: [{ data: Object.values(sAmbit), backgroundColor: ambitColors }] },
                 options: { 
                     maintainAspectRatio: false, 
                     animation: false,
@@ -262,9 +265,14 @@
                     } 
                 }
             });
+
+            // FIX: Ordenar cursos cronològicament per garantir sincronia eix X i dades
+            const sortedCursos = Object.keys(sCurs).sort();
+            const sortedBarData = sortedCursos.map(c => sCurs[c]);
+
             tempChart = new Chart(document.getElementById('canvas-bar'), {
                 type: 'bar',
-                data: { labels: Object.keys(sCurs).sort(), datasets: [{ label: 'Hores', data: Object.values(sCurs), backgroundColor: '#1e293b' }] },
+                data: { labels: sortedCursos, datasets: [{ label: 'Hores', data: sortedBarData, backgroundColor: '#1e293b' }] },
                 options: { 
                     maintainAspectRatio: false, 
                     animation: false,
@@ -276,23 +284,28 @@
 
         async function exportToWord() {
             const center = document.getElementById('center-name').innerText;
-            const container = document.getElementById('report-container');
             
+            // Re-generar charts abans d'exportar per seguretat (purgar qualsevol glitch)
+            calculateStatsAndCharts();
+
             const imgAmbit = document.getElementById('canvas-donut').toDataURL("image/png");
             const imgCurs = document.getElementById('canvas-bar').toDataURL("image/png");
 
+            const container = document.getElementById('report-container');
             const content = container.cloneNode(true);
             content.querySelectorAll('.no-print').forEach(n => n.remove());
             
-            content.querySelectorAll('select').forEach(s => {
+            // Substituir selectors per text pla en el clone del Word
+            content.querySelectorAll('select').forEach((s, idx) => {
                 const span = document.createElement('span');
-                span.innerText = s.value;
+                // Busquem el valor actual de l'objecte global per seguretat
+                span.innerText = globalActivities[idx].ambit;
                 s.parentNode.replaceChild(span, s);
             });
 
             const canvasDivs = content.querySelectorAll('.chart-wrapper');
-            if (canvasDivs[0]) canvasDivs[0].innerHTML = `<img src="${imgAmbit}" width="400" />`;
-            if (canvasDivs[1]) canvasDivs[1].innerHTML = `<img src="${imgCurs}" width="400" />`;
+            if (canvasDivs[0]) canvasDivs[0].innerHTML = `<img src="${imgAmbit}" width="350" />`;
+            if (canvasDivs[1]) canvasDivs[1].innerHTML = `<img src="${imgCurs}" width="350" />`;
 
             const html = `
                 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -300,11 +313,11 @@
                 <style>
                     body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
                     table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-                    th, td { border: 1px solid #999; padding: 10px; font-size: 10pt; text-align: left; }
+                    th, td { border: 1px solid #999; padding: 6px; font-size: 8pt; text-align: left; }
                     th { background-color: #f2f2f2; font-weight: bold; }
-                    h1 { color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; font-size: 18pt; }
-                    h2 { color: #333; border-bottom: 1px solid #eee; margin-top: 30px; font-size: 14pt; }
-                    p { text-align: justify; margin-bottom: 15px; }
+                    h1 { color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; font-size: 16pt; }
+                    h2 { color: #333; border-bottom: 1px solid #eee; margin-top: 20px; font-size: 12pt; }
+                    p { text-align: justify; margin-bottom: 10px; font-size: 10pt; }
                     img { display: block; margin: 10px auto; }
                 </style>
                 </head>
